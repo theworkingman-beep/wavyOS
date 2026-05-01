@@ -14,13 +14,13 @@ pub use common::{BootInfo, FramebufferInfo, MemoryRegion, MemoryRegionKind};
 #[cfg(target_arch = "x86_64")]
 extern "C" fn init_task() -> ! {
     log::info!("init: Vibe Coded OS running");
-    loop { hal::x86_64::halt(); }
+    userland::run_shell();
 }
 
 #[cfg(target_arch = "aarch64")]
 extern "C" fn init_task() -> ! {
     log::info!("init: Vibe Coded OS running");
-    loop { hal::aarch64::halt(); }
+    userland::run_shell();
 }
 
 mod arch;
@@ -29,6 +29,7 @@ mod scheduler;
 mod syscalls;
 mod compat;
 mod drivers;
+mod userland;
 
 #[cfg(target_arch = "x86_64")]
 use arch::x86_64 as arch_impl;
@@ -63,6 +64,7 @@ pub extern "C" fn kernel_main(boot_info: *mut BootInfo) -> ! {
     mm::init(mem_map);
     scheduler::init();
     compat::init();
+    userland::init();
     syscalls::init();
 
     log::info!("Vibe Coded OS kernel initialized. Spawning init task.");
