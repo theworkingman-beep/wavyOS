@@ -1,0 +1,15 @@
+[package]
+name = "hal"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+x86_64 = "0.15"
+raw-cpuid = "11.0"
+
+[features]
+bsp_rpi3 = []
+bsp_rpi4 = []
+bsp_qemu = []

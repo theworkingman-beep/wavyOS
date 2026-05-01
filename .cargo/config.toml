@@ -1,0 +1,16 @@
+# Vibe Coded OS — Build Configuration
+
+[build]
+target = "x86_64-unknown-none"
+
+[unstable]
+build-std = ["core", "compiler_builtins", "alloc"]
+build-std-features = ["compiler-builtins-mem"]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+lto = true
+opt-level = 3

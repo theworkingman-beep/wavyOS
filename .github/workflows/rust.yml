@@ -1,0 +1,50 @@
+name: Build Vibe Coded OS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-x86_64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src, llvm-tools-preview
+          targets: x86_64-unknown-none
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86
+      - name: Build x86_64
+        run: |
+          export TARGET_ARCH=x86_64
+          ./scripts/build.sh
+      - name: Upload x86_64 image
+        uses: actions/upload-artifact@v4
+        with:
+          name: vibe-os-x86_64
+          path: build/vibe-os-x86_64.img
+
+  build-aarch64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src, llvm-tools-preview
+          targets: aarch64-unknown-none
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-arm
+      - name: Build aarch64
+        run: |
+          export TARGET_ARCH=aarch64
+          ./scripts/build.sh
+      - name: Upload aarch64 image
+        uses: actions/upload-artifact@v4
+        with:
+          name: vibe-os-aarch64
+          path: build/vibe-os-aarch64.img

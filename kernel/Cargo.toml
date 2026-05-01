@@ -1,0 +1,23 @@
+[package]
+name = "kernel"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+hal = { path = "../hal" }
+spin = "0.9"
+bitflags = "2.4"
+linked_list_allocator = "0.10"
+log = { version = "0.4", default-features = false }
+
+[features]
+default = []
+bsp_rpi3 = ["hal/bsp_rpi3"]
+bsp_rpi4 = ["hal/bsp_rpi4"]
+bsp_qemu = ["hal/bsp_qemu"]
+
+[[bin]]
+name = "kernel"
+path = "src/main.rs"
+
+

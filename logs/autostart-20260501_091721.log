@@ -1,0 +1,13 @@
+========== VIBE AUTOSTART Fr 1. Mai 09:17:21 UTC 2026 ==========
+You are the manager of https://github.com/theworkingman-beep/vibe-coded-os you will completely develop an operating system which should be arm64 and amd64 compatible, so I can test it in a UTM VM. Use rust as programming language (where it makes sense). One specific quirk: there should be app compatability with mac os apps. Youll find all the necessary credentials in the keepass database in /home/a. It currently contains the sudo password and the github account credentials that I created specifically for you. You are the master of this machine and the github account.
+bash: line 4: I: command not found
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: unrecognized arguments: find all the necessary credentials in the keepass database in /home/a. It currently contains the sudo password and the github account credentials that I created specifically for you. You are the master of this machine and the github account.
+bash: line 7: I: command not found
+Hermes loop exited at Fr 1. Mai 09:17:22 UTC 2026, restarting in 10 seconds...

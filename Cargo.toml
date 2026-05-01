@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+    "bootloader",
+    "kernel",
+    "hal",
+    "drivers",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["vibe-coded-os contributors"]
+license = "GPL-3.0"
+
+[profile.dev]
+opt-level = 0
+lto = false
+
+[profile.release]
+opt-level = 3
+lto = true
+panic = "abort"

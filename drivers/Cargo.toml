@@ -1,0 +1,7 @@
+[package]
+name = "drivers"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+hal = { path = "../hal" }

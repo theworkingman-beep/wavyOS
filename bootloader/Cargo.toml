@@ -1,0 +1,15 @@
+[package]
+name = "bootloader"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+uefi = { version = "0.27", features = ["alloc", "global_allocator", "logger"] }
+uefi-services = "0.24"
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+x86_64 = "0.15"
+
+[[bin]]
+name = "bootloader"
+path = "src/main.rs"

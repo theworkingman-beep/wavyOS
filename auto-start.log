@@ -1,0 +1,512 @@
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
+usage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER]
+              [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]]
+              [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]
+              [--pass-session-id] [--ignore-user-config] [--ignore-rules]
+              [--tui] [--dev]
+              {chat,model,fallback,gateway,setup,whatsapp,slack,login,logout,auth,status,cron,webhook,kanban,hooks,doctor,dump,debug,backup,import,config,pairing,skills,plugins,curator,memory,tools,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,logs}
+              ...
+hermes: error: argument command: invalid choice: 'run' (choose from 'chat', 'model', 'fallback', 'gateway', 'setup', 'whatsapp', 'slack', 'login', 'logout', 'auth', 'status', 'cron', 'webhook', 'kanban', 'hooks', 'doctor', 'dump', 'debug', 'backup', 'import', 'config', 'pairing', 'skills', 'plugins', 'curator', 'memory', 'tools', 'mcp', 'sessions', 'insights', 'claw', 'version', 'update', 'uninstall', 'acp', 'profile', 'completion', 'dashboard', 'logs')
