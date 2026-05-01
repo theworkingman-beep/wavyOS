@@ -45,6 +45,9 @@ pub fn run_first_task() -> ! {
             task.state = TaskState::Dead;
         }
         // idle loop for now
+        #[cfg(target_arch = "x86_64")]
         crate::arch::x86_64::halt_loop();
+        #[cfg(target_arch = "aarch64")]
+        crate::arch::aarch64::halt_loop();
     }
 }

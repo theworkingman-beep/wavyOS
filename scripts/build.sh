@@ -40,11 +40,10 @@ echo "[3/4] Creating disk image..."
 BOOTLOADER_ELF="${ROOT_DIR}/target/${RUST_TARGET}/release/bootloader"
 KERNEL_ELF="${ROOT_DIR}/target/${RUST_TARGET}/release/kernel"
 
-# For now: use objcopy to create flat binaries
-rustc --print sysroot 2>/dev/null || true
-LLVM_PREFIX=$(rustc --print sysroot)/lib/rustlib/x86_64-unknown-linux-gnu/bin/
-if [ -f "${LLVM_PREFIX}llvm-objcopy" ]; then
-    OBJCOPY="${LLVM_PREFIX}llvm-objcopy"
+# Find LLVM tools (multi-target capable)
+TOOLCHAIN_BIN="$(rustc --print sysroot)/lib/rustlib/$(rustc --print host-tuple)/bin"
+if [ -f "${TOOLCHAIN_BIN}/llvm-objcopy" ]; then
+    OBJCOPY="${TOOLCHAIN_BIN}/llvm-objcopy"
 elif command -v llvm-objcopy >/dev/null 2>&1; then
     OBJCOPY="llvm-objcopy"
 elif command -v objcopy >/dev/null 2>&1; then

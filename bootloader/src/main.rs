@@ -45,6 +45,9 @@ fn main(_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     // TODO: load kernel ELF, parse and jump to entry
     println!("Halting — kernel handoff not yet implemented.");
     loop {
+        #[cfg(target_arch = "x86_64")]
         unsafe { core::arch::asm!("hlt") };
+        #[cfg(target_arch = "aarch64")]
+        unsafe { core::arch::asm!("wfe") };
     }
 }
