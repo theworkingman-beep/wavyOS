@@ -30,6 +30,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
+name = "common"
+version = "0.1.0"
+
+[[package]]
 name = "const_fn"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -55,6 +59,7 @@ name = "kernel"
 version = "0.1.0"
 dependencies = [
  "bitflags",
+ "common",
  "hal",
  "linked_list_allocator",
  "log",
