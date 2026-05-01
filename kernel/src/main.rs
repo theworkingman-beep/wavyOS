@@ -58,7 +58,9 @@ pub extern "C" fn kernel_main(boot_info: *mut BootInfo) -> ! {
     drivers::uart_logger::init();
     log::info!("kernel_main entered");
 
-    unsafe { drivers::fbcon::init(&*bi.framebuffer); }
+    if !bi.framebuffer.is_null() {
+        unsafe { drivers::fbcon::init(&*bi.framebuffer); }
+    }
 
     arch_impl::init(unsafe { &mut *boot_info });
     mm::init(mem_map);
