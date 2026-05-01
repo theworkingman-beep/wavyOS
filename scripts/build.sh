@@ -10,12 +10,16 @@ QEMU_RUN="${QEMU_RUN:-0}"
 
 if [ "$TARGET_ARCH" = "x86_64" ]; then
     RUST_TARGET="x86_64-unknown-none"
+    UEFI_TARGET="x86_64-unknown-uefi"
+    EFI_NAME="BOOTX64.EFI"
     QEMU="qemu-system-x86_64"
-    QEMU_ARGS="-cpu qemu64,+apic,+pae -machine q35 -m 256M -serial stdio -vga std -drive format=raw,file=build/vibe-os-x86_64.img"
+    QEMU_ARGS="-cpu qemu64,+apic,+pae -machine q35 -m 256M -serial stdio -drive format=raw,file=build/vibe-os-x86_64.img"
 elif [ "$TARGET_ARCH" = "aarch64" ]; then
     RUST_TARGET="aarch64-unknown-none"
+    UEFI_TARGET="aarch64-unknown-uefi"
+    EFI_NAME="BOOTAA64.EFI"
     QEMU="qemu-system-aarch64"
-    QEMU_ARGS="-machine virt -cpu cortex-a72 -m 256M -serial stdio -device virtio-gpu-pci -kernel build/vibe-os-aarch64.img"
+    QEMU_ARGS="-machine virt -cpu cortex-a72 -m 256M -serial stdio -device virtio-gpu-pci -drive format=raw,file=build/vibe-os-aarch64.img"
 else
     echo "Unsupported arch: $TARGET_ARCH"; exit 1
 fi
@@ -31,40 +35,50 @@ cargo build --target "${RUST_TARGET}" --release --package kernel
 
 # Build bootloader
 echo "[2/4] Building bootloader..."
-cargo build --target "${RUST_TARGET}" --release --package bootloader
+cargo build --target "${UEFI_TARGET}" --release --package bootloader
 
-# Link into a flat binary or disk image
+# Create disk image
 echo "[3/4] Creating disk image..."
-# Placeholder: just concatenate bootloader + kernel for now
-# A proper linker script / objcopy step would go here
-BOOTLOADER_ELF="${ROOT_DIR}/target/${RUST_TARGET}/release/bootloader"
+BOOTLOADER_EFI="${ROOT_DIR}/target/${UEFI_TARGET}/release/bootloader.efi"
 KERNEL_ELF="${ROOT_DIR}/target/${RUST_TARGET}/release/kernel"
 
-# Find LLVM tools (multi-target capable)
-TOOLCHAIN_BIN="$(rustc --print sysroot)/lib/rustlib/$(rustc --print host-tuple)/bin"
-if [ -f "${TOOLCHAIN_BIN}/llvm-objcopy" ]; then
-    OBJCOPY="${TOOLCHAIN_BIN}/llvm-objcopy"
-elif command -v llvm-objcopy >/dev/null 2>&1; then
-    OBJCOPY="llvm-objcopy"
-elif command -v objcopy >/dev/null 2>&1; then
-    OBJCOPY="objcopy"
-else
-    echo "ERROR: no objcopy found"; exit 1
-fi
+IMG="${ROOT_DIR}/build/vibe-os-${TARGET_ARCH}.img"
 
-"${OBJCOPY}" -O binary "${BOOTLOADER_ELF}" "${ROOT_DIR}/build/bootloader.bin" || true
-"${OBJCOPY}" -O binary "${KERNEL_ELF}" "${ROOT_DIR}/build/kernel.bin" || true
-
-# Create a simple disk image: 512-byte bootloader sector + kernel after 1MB mark
-# This is simplified — a real image would use a proper partition table.
-if [ -f "${ROOT_DIR}/build/bootloader.bin" ] && [ -f "${ROOT_DIR}/build/kernel.bin" ]; then
-    IMG="${ROOT_DIR}/build/vibe-os-${TARGET_ARCH}.img"
-    dd if=/dev/zero of="${IMG}" bs=1M count=8 2>/dev/null
-    dd if="${ROOT_DIR}/build/bootloader.bin" of="${IMG}" conv=notrunc bs=512 seek=0 2>/dev/null
-    dd if="${ROOT_DIR}/build/kernel.bin" of="${IMG}" conv=notrunc bs=512 seek=2048 2>/dev/null
-    echo "Disk image created: ${IMG}"
+# Create EFI FAT32 image when tooling is available
+if command -v mkfs.fat >/dev/null 2>&1 && command -v mcopy >/dev/null 2>&1 && command -v mmd >/dev/null 2>&1; then
+    dd if=/dev/zero of="${IMG}" bs=1M count=64 2>/dev/null || true
+    mkfs.fat -F 32 -n VIBEOS "${IMG}" >/dev/null 2>&1 || true
+    mmd -i "${IMG}" ::/EFI >/dev/null 2>&1 || true
+    mmd -i "${IMG}" ::/EFI/BOOT >/dev/null 2>&1 || true
+    if [ -f "${BOOTLOADER_EFI}" ]; then
+        mcopy -i "${IMG}" "${BOOTLOADER_EFI}" "::/EFI/BOOT/${EFI_NAME}" >/dev/null 2>&1 || true
+    fi
+    if [ -f "${KERNEL_ELF}" ]; then
+        mcopy -i "${IMG}" "${KERNEL_ELF}" ::/kernel >/dev/null 2>&1 || true
+    fi
+    echo "EFI disk image created: ${IMG}"
 else
-    echo "WARNING: Missing bootloader.bin or kernel.bin, skipping image creation."
+    # Fallback raw image for environments without mtools
+    if command -v llvm-objcopy >/dev/null 2>&1; then
+        OBJCOPY="llvm-objcopy"
+    elif command -v objcopy >/dev/null 2>&1; then
+        OBJCOPY="objcopy"
+    else
+        echo "WARNING: no objcopy for raw fallback"
+        OBJCOPY=""
+    fi
+    if [ -n "$OBJCOPY" ]; then
+        "$OBJCOPY" -O binary "${BOOTLOADER_EFI}" "${ROOT_DIR}/build/bootloader.bin" || true
+        "$OBJCOPY" -O binary "${KERNEL_ELF}" "${ROOT_DIR}/build/kernel.bin" || true
+    fi
+    dd if=/dev/zero of="${IMG}" bs=1M count=8 2>/dev/null || true
+    if [ -f "${ROOT_DIR}/build/bootloader.bin" ]; then
+        dd if="${ROOT_DIR}/build/bootloader.bin" of="${IMG}" conv=notrunc bs=512 seek=0 2>/dev/null || true
+    fi
+    if [ -f "${ROOT_DIR}/build/kernel.bin" ]; then
+        dd if="${ROOT_DIR}/build/kernel.bin" of="${IMG}" conv=notrunc bs=512 seek=2048 2>/dev/null || true
+    fi
+    echo "Raw disk image created: ${IMG} (EFI fallback)"
 fi
 
 # Run in QEMU if requested
