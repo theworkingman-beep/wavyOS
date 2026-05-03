@@ -38,6 +38,17 @@ cargo build --target "${RUST_TARGET}" --release --package kernel
 echo "[2/5] Building bootloader..."
 cargo build --target "${UEFI_TARGET}" --release --package bootloader
 
+echo "[2b/5] Building user-space apps..."
+for app_dir in libvibe windowserver desktop_shell sample_app; do
+    if [ -d "${ROOT_DIR}/apps/${app_dir}" ]; then
+        if [ "${app_dir}" = "libvibe" ]; then
+            cargo build --manifest-path "${ROOT_DIR}/apps/${app_dir}/Cargo.toml" --target "${RUST_TARGET}" --release || true
+        else
+            cargo build --manifest-path "${ROOT_DIR}/apps/${app_dir}/Cargo.toml" --target "${RUST_TARGET}" --release || true
+        fi
+    fi
+done
+
 BOOTLOADER_EFI="${ROOT_DIR}/target/${UEFI_TARGET}/release/bootloader.efi"
 KERNEL_ELF="${ROOT_DIR}/target/${RUST_TARGET}/release/kernel"
 IMG="${ROOT_DIR}/build/vibe-os-${TARGET_ARCH}.img"
@@ -55,6 +66,12 @@ if command -v mkfs.fat >/dev/null 2>&1 && command -v mcopy >/dev/null 2>&1 && co
     if [ -f "${KERNEL_ELF}" ]; then
         mcopy -i "${IMG}" "${KERNEL_ELF}" ::/kernel >/dev/null 2>&1 || true
     fi
+    for app in windowserver desktop_shell sample_app; do
+        APP_ELF="${ROOT_DIR}/apps/${app}/target/${RUST_TARGET}/release/${app}"
+        if [ -f "${APP_ELF}" ]; then
+            mcopy -i "${IMG}" "${APP_ELF}" "::/${app}" >/dev/null 2>&1 || true
+        fi
+    done
     echo "EFI disk image: ${IMG}"
 else
     dd if=/dev/zero of="${IMG}" bs=1M count=8 2>/dev/null || true
