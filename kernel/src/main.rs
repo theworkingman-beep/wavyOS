@@ -28,6 +28,7 @@ mod mm;
 mod scheduler;
 mod syscalls;
 mod ipc;
+mod shm;
 mod compat;
 mod drivers;
 mod userland;
@@ -67,6 +68,7 @@ pub extern "C" fn kernel_main(boot_info: *mut BootInfo) -> ! {
     mm::init(mem_map);
     scheduler::init();
     ipc::init();
+    shm::init();
     compat::init();
     userland::init();
     syscalls::init();
