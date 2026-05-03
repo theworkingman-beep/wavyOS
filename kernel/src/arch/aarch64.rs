@@ -11,3 +11,13 @@ pub fn halt_loop() -> ! {
         unsafe { core::arch::asm!("wfe") }
     }
 }
+
+pub unsafe fn jump_to_user(entry: usize, stack_top: usize) -> ! {
+    core::arch::asm!(
+        "mov sp, {stack}",
+        "br {entry}",
+        stack = in(reg) stack_top,
+        entry = in(reg) entry,
+        options(noreturn)
+    );
+}
