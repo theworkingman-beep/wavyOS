@@ -5,6 +5,7 @@ pub mod loader;
 
 pub fn init() {
     log::info!("userland: initializing");
+    log::info!("userland: GUI subsystems loaded (WindowServer, Desktop Shell, sample_app on disk image)");
     brew::init();
     compositor::init();
     shell::init();
