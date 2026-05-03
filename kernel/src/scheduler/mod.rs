@@ -3,6 +3,7 @@ use alloc::collections::vec_deque::VecDeque;
 use spin::Mutex;
 
 static TASKS: Mutex<VecDeque<Task>> = Mutex::new(VecDeque::new());
+static CURRENT_TASK: Mutex<Option<TaskId>> = Mutex::new(None);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TaskId(usize);
@@ -48,10 +49,15 @@ pub fn spawn(entry: EntryPoint, stack_top: Option<usize>) {
     TASKS.lock().push_back(task);
 }
 
+pub fn current_task_id() -> TaskId {
+    CURRENT_TASK.lock().clone().unwrap_or(TaskId(0))
+}
+
 pub fn run_first_task() -> ! {
     loop {
         if let Some(mut task) = TASKS.lock().pop_front() {
             task.state = TaskState::Running;
+            *CURRENT_TASK.lock() = Some(task.id);
             // Jump to the task entry using inline asm
             unsafe {
                 #[cfg(target_arch = "x86_64")]
