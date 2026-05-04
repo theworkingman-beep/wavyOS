@@ -148,14 +148,84 @@ fn draw_desktop() {
     }
 }
 
-/// GUI init task — draws the macOS-like desktop
+/// GUI init task — draws the macOS-like desktop and handles input events
 extern "C" fn gui_task() -> ! {
-    log::info!("gui_task: starting desktop compositor");
-    draw_desktop();
-    log::info!("gui_task: desktop rendered");
+    use drivers::{fbcon, cursor};
+    use input::InputEvent;
+    use wm::{hit_test, HitTarget, TrafficLight, DesktopLayout};
 
-    // Main compositor loop
+    log::info!("gui_task: starting desktop compositor");
+
+    let fb_w = unsafe { fbcon::fb_width() };
+    let fb_h = unsafe { fbcon::fb_height() };
+
+    draw_desktop();
+
+    let dock_y = (fb_h - 80) as u16;
+    let dock_h = 70u16;
+    let dock_x = ((fb_w - 500) / 2) as u16;
+    let dock_w = 500u16;
+
+    let win_x: u16 = 100;
+    let win_y: u16 = 80;
+    let win_w: u16 = 600;
+    let win_h: u16 = 400;
+
+    let layout = DesktopLayout {
+        win_x, win_y, win_w, win_h,
+        dock_y, dock_x, dock_w,
+    };
+
+    let cursor_start_x = 400u16.min(fb_w as u16 - 16);
+    let cursor_start_y = 300u16.min(fb_h as u16 - 16);
+    cursor::draw(cursor_start_x, cursor_start_y);
+
+    log::info!("gui_task: desktop rendered, cursor shown, entering event loop");
+
+    let mut window_visible = true;
+
     loop {
+        while let Some(event) = input::poll() {
+            match event {
+                InputEvent::MouseMove { x, y, buttons: _ } => {
+                    cursor::move_cursor(x, y);
+                }
+                InputEvent::MouseDown { button: 0, x, y } => {
+                    let target = hit_test(x, y, &layout);
+                    match target {
+                        HitTarget::TrafficLight(TrafficLight::Close) => {
+                            if window_visible {
+                                log::info!("gui_task: close window clicked");
+                                draw_desktop();
+                                window_visible = false;
+                            }
+                        }
+                        HitTarget::TrafficLight(TrafficLight::Minimize) => {
+                            log::info!("gui_task: minimize window clicked");
+                        }
+                        HitTarget::TrafficLight(TrafficLight::Maximize) => {
+                            log::info!("gui_task: maximize window clicked");
+                        }
+                        HitTarget::DockIcon(idx) => {
+                            let app_names = ["Finder", "Terminal", "Settings", "Activity", "Browser"];
+                            let name = if idx < app_names.len() { app_names[idx] } else { "Unknown" };
+                            log::info!("gui_task: dock icon clicked: {} (idx={})", name, idx);
+                        }
+                        HitTarget::TitleBar => {
+                            log::info!("gui_task: title bar clicked (drag not implemented yet)");
+                        }
+                        HitTarget::WindowBody => {
+                            log::info!("gui_task: window body clicked");
+                        }
+                        HitTarget::None => {}
+                        _ => {}
+                    }
+                }
+                InputEvent::MouseUp { .. } => {}
+                InputEvent::KeyPress { .. } => {}
+                _ => {}
+            }
+        }
         scheduler::yield_cpu();
     }
 }
@@ -198,6 +268,11 @@ pub extern "C" fn kernel_main(boot_info: *mut BootInfo) -> ! {
     arch_impl::init(unsafe { &mut *boot_info });
     mm::init(mem_map);
     input::init();
+    drivers::cursor::init();
+
+    #[cfg(target_arch = "x86_64")]
+    drivers::ps2mouse::init();
+
     scheduler::init();
     ipc::init();
     shm::init();

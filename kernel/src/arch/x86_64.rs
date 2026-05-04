@@ -54,6 +54,18 @@ extern "x86-interrupt" fn irq0_handler(_sf: &mut InterruptStackFrame) {
     }
 }
 
+// IRQ12 (PS/2 mouse) handler
+extern "x86-interrupt" fn irq12_handler(_sf: &mut InterruptStackFrame) {
+    unsafe {
+        let byte: u8;
+        core::arch::asm!("in al, dx", in("dx") 0x60u16, out("al") byte);
+        crate::drivers::ps2mouse::handle_mouse_byte(byte);
+        // EOI to both PICs (mouse is on PIC2)
+        core::arch::asm!("out dx, al", in("dx") 0xA0u16, in("al") 0x20u8);
+        core::arch::asm!("out dx, al", in("dx") 0x20u16, in("al") 0x20u8);
+    }
+}
+
 extern "x86-interrupt" fn double_fault_handler(_sf: &mut InterruptStackFrame, _err: u64) -> ! {
     log::error!("DOUBLE FAULT");
     loop { unsafe { core::arch::asm!("hlt") } }
@@ -86,6 +98,7 @@ pub fn init(_boot_info: &mut BootInfo) {
         // Set up IDT entries
         set_idt_entry(32, irq0_handler as usize, 0x08, 0x8E); // IRQ0 timer
         set_idt_entry(33, irq1_handler as usize, 0x08, 0x8E); // IRQ1 keyboard
+        set_idt_entry(44, irq12_handler as usize, 0x08, 0x8E); // IRQ12 mouse
         set_idt_entry(8, double_fault_handler as usize, 0x08, 0x8E);
 
         // Load IDT

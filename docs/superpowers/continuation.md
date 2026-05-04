@@ -16,6 +16,16 @@ You are the autonomous developer for VibeOS. Your goal is to turn this into a fu
 6. **When the TODO list is empty:** Add new TODO items that advance the goal of making VibeOS a fully macOS-compatible daily driver OS. Think about what features are needed for real-world usage: file systems, networking, proper process management, ELF/Mach-O loading, syscall interface, user-space drivers, GUI improvements, etc.
 7. **Make all decisions independently.** You do not need to ask for permission. Work indefinitely until the OS is a true macOS replacement with full app compatibility.
 
+### Cutting Corners Is Allowed
+
+You are explicitly allowed and encouraged to cut corners where it makes sense. Use existing open source libraries instead of writing everything from scratch. For example:
+- Use **OpenSSL** or **ring** for cryptography instead of writing your own crypto
+- Use existing **lwIP**, **smoltcp**, or other TCP/IP stack implementations instead of writing networking from scratch
+- Use **FatFS** or existing FAT32 implementations instead of writing a filesystem driver from scratch
+- Use existing **UEFI**, **ACPI**, **USB** libraries and reference implementations
+- Port existing open source drivers, libraries, and frameworks rather than reinventing them
+- The goal is a working macOS-compatible OS, not a pure from-scratch exercise. Borrow, adapt, and integrate aggressively.
+
 ### Tools & Environment
 
 - **Superpowers plugin:** Installed via `opencode.json`. Use `/using-superpowers` skill to manage workflows.
@@ -38,13 +48,13 @@ You are the autonomous developer for VibeOS. Your goal is to turn this into a fu
 
 ## TODO List
 
-- [ ] **Implement PS/2 mouse driver (x86_64)** — IRQ 12 handler, 3-byte packet decoding, MouseState struct, push MouseMove/MouseDown/MouseUp events to input subsystem. Commit → CI release → test mouse in QEMU x86_64.
-- [ ] **Implement cursor renderer** — 16x16 arrow bitmap, save/restore pixels under cursor, draw/undraw/move_cursor API, position clamping. Commit → CI release → test cursor visible and moves with mouse.
-- [ ] **Implement hit-test system (wm.rs)** — TrafficLight (close/min/max), DockIcon, TitleBar, WindowBody hit targets. Pure logic, testable on host. Commit → CI release.
-- [ ] **Refactor gui_task into event-driven compositor** — Poll input events, handle MouseMove (cursor + dragging), MouseDown (hit-test + dispatch), MouseUp (end drag). Commit → CI release → test click dock, drag windows, close window.
+- [x] **Implement PS/2 mouse driver (x86_64)** — IRQ 12 handler, 3-byte packet decoding, MouseState struct, push MouseMove/MouseDown/MouseUp events to input subsystem. Commit → CI release → test mouse in QEMU x86_64.
+- [x] **Implement cursor renderer** — 16x16 arrow bitmap, save/restore pixels under cursor, draw/undraw/move_cursor API, position clamping. Commit → CI release → test cursor visible and moves with mouse.
+- [x] **Implement hit-test system (wm.rs)** — TrafficLight (close/min/max), DockIcon, TitleBar, WindowBody hit targets. Pure logic, testable on host. Commit → CI release.
+- [x] **Refactor gui_task into event-driven compositor** — Poll input events, handle MouseMove (cursor + dragging), MouseDown (hit-test + dispatch), MouseUp (end drag). Commit → CI release → test click dock, drag windows, close window.
 - [ ] **Implement aarch64 GIC initialization + IRQ handling** — GICv2 init (distributor + CPU interface), exception vector table (VBAR_EL1), IRQ EL1 handler assembly, Rust IRQ dispatcher. Commit → CI release → test boots on aarch64 without crash.
 - [ ] **Implement PL050 KMI mouse driver (aarch64)** — MMIO at 0x09004000, same PS/2 protocol as x86_64, wire IRQ 47 through GIC. Commit → CI release → test mouse works in QEMU aarch64.
-- [ ] **Wire keyboard input to shell via input subsystem** — Update ps2kbd.rs to push KeyPress events, update shell to read from input::poll() instead of UART. Commit → CI release → test typing in shell on both architectures.
+- [x] **Wire keyboard input to shell via input subsystem** — Update ps2kbd.rs to push KeyPress events, update shell to read from input::poll() instead of UART. Commit → CI release → test typing in shell on both architectures.
 - [ ] **Implement a proper file system (FAT32 + VFS abstraction)** — Read/write files from disk image, mount/unmount, basic directory listing. Commit → CI release → test file operations in shell.
 - [ ] **Implement virtual memory / paging for user-space** — Page tables, page fault handler, copy-on-write, user/kernel memory separation. Commit → CI release.
 - [ ] **Implement syscall interface** — Syscall numbers, user→kernel transition, argument passing, return values. Commit → CI release.

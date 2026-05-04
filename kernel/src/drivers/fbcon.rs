@@ -30,6 +30,30 @@ pub unsafe fn raw_ptr() -> *mut u8 {
     FB_PTR
 }
 
+pub struct FramebufferRef {
+    pub ptr: *mut u8,
+    pub info: FramebufferInfo,
+}
+
+pub fn get_framebuffer() -> FramebufferRef {
+    unsafe {
+        FramebufferRef {
+            ptr: FB_PTR,
+            info: FramebufferInfo {
+                addr: FB_PTR as u64,
+                width: FB_W as u32,
+                height: FB_H as u32,
+                pitch: FB_PITCH as u32,
+                bpp: FB_BPP as u8,
+            },
+        }
+    }
+}
+
+pub fn set_pixel(x: usize, y: usize, color: u32) {
+    put_pixel(x, y, color);
+}
+
 /// Write a 32-bit color pixel at (x, y) with alpha blending
 pub fn put_pixel(x: usize, y: usize, color: u32) {
     unsafe {
