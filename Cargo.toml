@@ -6,6 +6,15 @@ members = [
     "kernel",
     "hal",
     "drivers",
+    "apps/libvibe",
+    "apps/windowserver",
+    "apps/desktop_shell",
+    "apps/sample_app",
+]
+
+default-members = [
+    "kernel",
+    "bootloader",
 ]
 
 [workspace.package]

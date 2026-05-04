@@ -43,6 +43,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "413d67b29ef1021b4d60f4aa1e925ca031751e213832b4b1d588fae623c05c60"
 
 [[package]]
+name = "desktop_shell"
+version = "0.1.0"
+dependencies = [
+ "libvibe",
+]
+
+[[package]]
 name = "drivers"
 version = "0.1.0"
 dependencies = [
@@ -78,6 +85,10 @@ dependencies = [
  "log",
  "spin",
 ]
+
+[[package]]
+name = "libvibe"
+version = "0.1.0"
 
 [[package]]
 name = "linked_list_allocator"
@@ -161,6 +172,13 @@ name = "rustversion"
 version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
+
+[[package]]
+name = "sample_app"
+version = "0.1.0"
+dependencies = [
+ "libvibe",
+]
 
 [[package]]
 name = "scopeguard"
@@ -288,6 +306,13 @@ name = "volatile"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "442887c63f2c839b346c192d047a7c87e73d0689c9157b00b53dcc27dd5ea793"
+
+[[package]]
+name = "windowserver"
+version = "0.1.0"
+dependencies = [
+ "libvibe",
+]
 
 [[package]]
 name = "x86_64"

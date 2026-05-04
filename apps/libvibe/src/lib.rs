@@ -1,5 +1,4 @@
 #![no_std]
-#![feature(asm_const)]
 
 pub const SYS_IPC_SEND: usize = 5;
 pub const SYS_IPC_RECV: usize = 6;

@@ -4,6 +4,9 @@ export HERMITOS="vibe-coded-os"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+# Ensure Rust toolchain is on PATH
+export PATH="$HOME/.cargo/bin:$HOME/.rustup/toolchains/nightly-aarch64-unknown-linux-gnu/bin:$PATH"
+
 TARGET_ARCH="${TARGET_ARCH:-x86_64}"
 MODE="${MODE:-release}"
 QEMU_RUN="${QEMU_RUN:-0}"
@@ -39,13 +42,10 @@ echo "[2/5] Building bootloader..."
 cargo build --target "${UEFI_TARGET}" --release --package bootloader
 
 echo "[2b/5] Building user-space apps..."
+APPS_TARGET="${ROOT_DIR}/targets/vibeos-${TARGET_ARCH}.json"
 for app_dir in libvibe windowserver desktop_shell sample_app; do
     if [ -d "${ROOT_DIR}/apps/${app_dir}" ]; then
-        if [ "${app_dir}" = "libvibe" ]; then
-            cargo build --manifest-path "${ROOT_DIR}/apps/${app_dir}/Cargo.toml" --target "${RUST_TARGET}" --release || true
-        else
-            cargo build --manifest-path "${ROOT_DIR}/apps/${app_dir}/Cargo.toml" --target "${RUST_TARGET}" --release || true
-        fi
+        cargo +nightly build -Zbuild-std=core,alloc -Zjson-target-spec --target "${APPS_TARGET}" --manifest-path "${ROOT_DIR}/apps/${app_dir}/Cargo.toml" --release 2>&1 | grep -v "^warning:" || true
     fi
 done
 
@@ -67,7 +67,7 @@ if command -v mkfs.fat >/dev/null 2>&1 && command -v mcopy >/dev/null 2>&1 && co
         mcopy -i "${IMG}" "${KERNEL_ELF}" ::/kernel >/dev/null 2>&1 || true
     fi
     for app in windowserver desktop_shell sample_app; do
-        APP_ELF="${ROOT_DIR}/apps/${app}/target/${RUST_TARGET}/release/${app}"
+        APP_ELF="${ROOT_DIR}/target/vibeos-${TARGET_ARCH}/release/${app}"
         if [ -f "${APP_ELF}" ]; then
             mcopy -i "${IMG}" "${APP_ELF}" "::/${app}" >/dev/null 2>&1 || true
         fi
