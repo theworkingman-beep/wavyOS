@@ -25,7 +25,7 @@ You are the autonomous developer for VibeOS. Your goal is to turn this into a fu
 - **AAVMF:** `/usr/share/AAVMF/AAVMF_CODE.no-secboot.fd` + `/usr/share/AAVMF/AAVMF_VARS.fd`
 - **Git credentials:** Author `theworkingman-beep <280896895+theworkingman-beep@users.noreply.github.com>`
 - **GitHub:** `theworkingman-beep/vibe-coded-os`
-- **Local sudo password:** `b`
+- **Sudo password and GitHub credentials:** stored in `/home/b/credentials.txt`
 
 ### Key Project Info
 
