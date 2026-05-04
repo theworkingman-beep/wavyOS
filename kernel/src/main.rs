@@ -18,6 +18,8 @@ mod shm;
 mod compat;
 mod drivers;
 mod userland;
+mod input;
+mod wm;
 
 #[cfg(target_arch = "x86_64")]
 use arch::x86_64 as arch_impl;
@@ -195,6 +197,7 @@ pub extern "C" fn kernel_main(boot_info: *mut BootInfo) -> ! {
 
     arch_impl::init(unsafe { &mut *boot_info });
     mm::init(mem_map);
+    input::init();
     scheduler::init();
     ipc::init();
     shm::init();
