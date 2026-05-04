@@ -2,46 +2,8 @@
 //! Uses scancode set 1 (standard PC AT keyboard)
 //! IRQ 1 -> IDT entry 33
 
+use crate::input::{self, InputEvent};
 use spin::Mutex;
-
-static KEYBOARD_BUFFER: Mutex<KeyboardBuffer> = Mutex::new(KeyboardBuffer::new());
-static KEYBOARD_HANDLER: Mutex<Option<extern "C" fn(u8)>> = Mutex::new(None);
-
-const KB_BUF_SIZE: usize = 256;
-
-struct KeyboardBuffer {
-    buffer: [u8; KB_BUF_SIZE],
-    head: usize,
-    tail: usize,
-}
-
-impl KeyboardBuffer {
-    const fn new() -> Self {
-        Self {
-            buffer: [0; KB_BUF_SIZE],
-            head: 0,
-            tail: 0,
-        }
-    }
-
-    fn push(&mut self, byte: u8) {
-        let next = (self.head + 1) % KB_BUF_SIZE;
-        if next != self.tail {
-            self.buffer[self.head] = byte;
-            self.head = next;
-        }
-    }
-
-    fn pop(&mut self) -> Option<u8> {
-        if self.head == self.tail {
-            None
-        } else {
-            let byte = self.buffer[self.tail];
-            self.tail = (self.tail + 1) % KB_BUF_SIZE;
-            Some(byte)
-        }
-    }
-}
 
 /// PS/2 scancode set 1 translation table (unshifted)
 const SCANCODE_TABLE: &'static [u8] = &[
@@ -68,19 +30,14 @@ static CAPS_LOCK: Mutex<bool> = Mutex::new(false);
 
 /// Initialize PS/2 keyboard
 pub fn init() {
-    // Wait for keyboard controller to be ready
     wait_kb_ready();
 
     // Enable keyboard interface (IRQ 1)
     unsafe {
-        // Send command 0xAE: Enable keyboard interface
         outb(0x64, 0xAE);
-        // Send command 0x60: Write command byte
         outb(0x64, 0x60);
         wait_kb_ready();
-        // Read current command byte
         let mut cmd = inb(0x60);
-        // Enable IRQ 1 (bit 0) and keyboard (bit 4)
         cmd |= 0x01;
         cmd &= !0x10;
         outb(0x64, 0x60);
@@ -88,41 +45,14 @@ pub fn init() {
         outb(0x60, cmd);
     }
 
-    // Remap PIC: keyboard is IRQ 1 -> interrupt 33 (0x21)
     remap_pic();
 
-    // Unmask IRQ 1 (keyboard) in PIC1
     unsafe {
         let mask = inb(0x21);
-        outb(0x21, mask & !0x02); // bit 1 = IRQ 1
+        outb(0x21, mask & !0x02);
     }
 
     log::info!("ps2kbd: initialized (IRQ 1 -> int 0x21)");
-}
-
-/// Read a character from the keyboard buffer (non-blocking)
-pub fn read_char() -> Option<u8> {
-    KEYBOARD_BUFFER.lock().pop()
-}
-
-/// Read a character from the keyboard buffer (blocking)
-pub fn read_char_blocking() -> u8 {
-    loop {
-        if let Some(c) = read_char() {
-            return c;
-        }
-        unsafe { core::arch::asm!("hlt") };
-    }
-}
-
-/// Check if there's a character available
-pub fn has_char() -> bool {
-    KEYBOARD_BUFFER.lock().head != KEYBOARD_BUFFER.lock().tail
-}
-
-/// Register a callback for keyboard events
-pub fn set_handler(handler: extern "C" fn(u8)) {
-    *KEYBOARD_HANDLER.lock() = Some(handler);
 }
 
 /// Called from the IRQ handler when a scancode is received
@@ -135,7 +65,6 @@ pub fn handle_scancode(scancode: u8) {
     let mut shift = SHIFT_PRESSED.lock();
     let mut caps = CAPS_LOCK.lock();
 
-    // Handle modifier keys
     if scancode == LSHIFT || scancode == RSHIFT {
         *shift = true;
         return;
@@ -149,17 +78,14 @@ pub fn handle_scancode(scancode: u8) {
         return;
     }
 
-    // Ignore key releases for normal keys
     if scancode & KEY_RELEASE != 0 {
         return;
     }
 
-    // Translate scancode to ASCII
-    let ascii = if scancode < SCANCODE_TABLE.len() as u8 {
+    let ascii = if (scancode as usize) < SCANCODE_TABLE.len() {
         let idx = scancode as usize;
         let mut c = SCANCODE_TABLE[idx];
 
-        // Apply shift if pressed
         if *shift {
             if idx < SCANCODE_SHIFT_TABLE.len() {
                 c = SCANCODE_SHIFT_TABLE[idx];
@@ -173,34 +99,23 @@ pub fn handle_scancode(scancode: u8) {
         0
     };
 
-    // Call registered handler
-    if let Some(handler) = *KEYBOARD_HANDLER.lock() {
-        handler(ascii);
-    }
-
-    // Push to buffer
     if ascii != 0 {
-        KEYBOARD_BUFFER.lock().push(ascii);
+        input::push(InputEvent::KeyPress { ascii });
     }
 }
 
 fn remap_pic() {
     unsafe {
-        // ICW1: Init + 4-byte ICW + cascade mode
         outb(0x20, 0x11);
         outb(0xA0, 0x11);
-        // ICW2: Vector offsets (PIC1: 0x20, PIC2: 0x28)
         outb(0x21, 0x20);
         outb(0xA1, 0x28);
-        // ICW3: Cascade info (PIC2 on IRQ 2)
         outb(0x21, 0x04);
         outb(0xA1, 0x02);
-        // ICW4: 8086 mode
         outb(0x21, 0x01);
         outb(0xA1, 0x01);
-        // Mask all interrupts initially (except IRQ 1)
-        outb(0x21, 0xFC); // 11111100 - unmask IRQ 0 (timer) and IRQ 1 (keyboard)
-        outb(0xA1, 0xFF); // mask all on PIC2
+        outb(0x21, 0xFC);
+        outb(0xA1, 0xFF);
     }
 }
 
@@ -232,4 +147,29 @@ unsafe fn inb(port: u16) -> u8 {
 /// End-of-interrupt signal to PIC
 pub unsafe fn eoi() {
     outb(0x20, 0x20);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::input::{InputEvent, poll};
+
+    #[test]
+    fn test_scancode_to_keypress() {
+        handle_scancode(0x1E);
+        assert_eq!(poll(), Some(InputEvent::KeyPress { ascii: b'a' }));
+    }
+
+    #[test]
+    fn test_shifted_scancode() {
+        handle_scancode(0x2A);
+        handle_scancode(0x02);
+        assert_eq!(poll(), Some(InputEvent::KeyPress { ascii: b'!' }));
+    }
+
+    #[test]
+    fn test_key_release_ignored() {
+        handle_scancode(0x9E);
+        assert_eq!(poll(), None);
+    }
 }

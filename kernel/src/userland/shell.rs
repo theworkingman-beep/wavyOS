@@ -1,5 +1,6 @@
 use alloc::string::String;
 use alloc::vec::Vec;
+use crate::input::{self, InputEvent};
 
 pub struct Shell {
     line: String,
@@ -26,7 +27,25 @@ impl Shell {
 
     fn readline(&mut self) {
         self.line.clear();
-        self.line.push_str("help");
+        loop {
+            if let Some(event) = input::poll() {
+                match event {
+                    InputEvent::KeyPress { ascii } => {
+                        match ascii {
+                            b'\n' => break,
+                            b'\x08' => { self.line.pop(); }
+                            ascii if ascii >= 32 && ascii < 127 => {
+                                self.line.push(ascii as char);
+                            }
+                            _ => {}
+                        }
+                    }
+                    _ => {}
+                }
+            } else {
+                crate::scheduler::yield_cpu();
+            }
+        }
         self.parts.clear();
         for p in self.line.split_whitespace() {
             self.parts.push(String::from(p));
