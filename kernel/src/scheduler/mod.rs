@@ -59,22 +59,28 @@ impl Task {
     pub fn init_context(&mut self) {
         let mut sp = self.stack_top();
         unsafe {
-            // Push entry point as return address (will be at the top of the stack)
-            sp -= core::mem::size_of::<usize>();
-            *(sp as *mut usize) = self.entry;
-
-            // Push dummy values for callee-saved registers
-            #[cfg(target_arch = "x86_64")]
-            for _ in 0..6 {
+            // aarch64: push entry FIRST (highest address), then 11 dummies (x19-x29)
+            // Stack grows down, so entry ends up at lowest address after all pushes
+            // switch_context pops x19-x30 from low to high, so entry loads into x30
+            #[cfg(target_arch = "aarch64")]
+            {
                 sp -= core::mem::size_of::<usize>();
-                *(sp as *mut usize) = 0;
+                *(sp as *mut usize) = self.entry;
+                for _ in 0..11 {
+                    sp -= core::mem::size_of::<usize>();
+                    *(sp as *mut usize) = 0;
+                }
             }
 
-            // aarch64: x19-x30 = 12 callee-saved registers
-            #[cfg(target_arch = "aarch64")]
-            for _ in 0..12 {
+            // x86_64: push entry as return address, then 6 dummy callee-saved regs
+            #[cfg(target_arch = "x86_64")]
+            {
                 sp -= core::mem::size_of::<usize>();
-                *(sp as *mut usize) = 0;
+                *(sp as *mut usize) = self.entry;
+                for _ in 0..6 {
+                    sp -= core::mem::size_of::<usize>();
+                    *(sp as *mut usize) = 0;
+                }
             }
         }
         self.context.rsp = sp;
@@ -256,9 +262,6 @@ core::arch::global_asm!(
     "switch_context:",
     // x0 = old_sp_ptr, x1 = new_sp
     "cbz x0, 1f",
-    // Get current SP and save to old task context
-    "mov x2, sp",
-    "str x2, [x0]",
     // Push callee-saved registers x19-x30 (12 registers = 96 bytes)
     "stp x29, x30, [sp, #-16]!",
     "stp x27, x28, [sp, #-16]!",

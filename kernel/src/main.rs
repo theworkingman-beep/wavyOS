@@ -154,7 +154,6 @@ extern "C" fn gui_task() -> ! {
 
     // Main compositor loop
     loop {
-        // Check for IPC messages (window updates, etc.)
         scheduler::yield_cpu();
     }
 }
@@ -206,7 +205,7 @@ pub extern "C" fn kernel_main(boot_info: *mut BootInfo) -> ! {
     log::info!("Spawning GUI and shell tasks.");
     scheduler::spawn(gui_task);
     scheduler::spawn(shell_task);
-
+    log::info!("Tasks spawned, running scheduler.");
     scheduler::run_scheduler();
 }
 

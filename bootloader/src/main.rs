@@ -1,3 +1,9 @@
+//! Vibe Coded OS UEFI Bootloader
+//!
+//! Supports both x86_64 and aarch64 UEFI boot.
+//! On x86_64: kernel is loaded at its linked virtual address (no page tables needed).
+//! On aarch64: kernel is loaded anywhere, page tables map virtual→physical.
+
 #![no_std]
 #![no_main]
 #![cfg_attr(target_arch = "x86_64", feature(abi_efiapi))]
@@ -85,6 +91,128 @@ unsafe fn uart_putc(_c: u8) {
     // UART output not implemented for aarch64
 }
 
+/// Load kernel ELF into memory. On x86_64, allocates at the linked virtual address.
+/// On aarch64, allocates anywhere and sets up page tables to map virtual→physical.
+/// Returns (phys_base, extra) where extra is (page_table_phys, entry_vaddr) on aarch64, (entry_vaddr, 0) on x86_64.
+#[cfg(target_arch = "x86_64")]
+fn load_kernel(st: &mut SystemTable<Boot>, phdrs: &[Elf64Phdr], kernel_raw: &[u8], entry_vaddr: u64) -> (u64, (u64, u64)) {
+    let mut lowest_vaddr = u64::MAX;
+    let mut highest_end: u64 = 0;
+    for ph in phdrs {
+        if ph.p_type != PT_LOAD { continue; }
+        let vaddr = ph.p_vaddr & !0xFFF;
+        let end = (ph.p_vaddr + ph.p_memsz + 0xFFF) & !0xFFF;
+        if vaddr < lowest_vaddr { lowest_vaddr = vaddr; }
+        if end > highest_end { highest_end = end; }
+    }
+    let total_pages = ((highest_end - lowest_vaddr) / 0x1000) as usize;
+
+    let base_addr = st.boot_services().allocate_pages(AllocateType::Address(lowest_vaddr), MemoryType::LOADER_DATA, total_pages);
+    let base_addr = match base_addr {
+        Ok(a) => a,
+        Err(e) => { println!("alloc failed at {:x}, {} pages: {:?}", lowest_vaddr, total_pages, e); return (0, (0, 0)); }
+    };
+
+    for ph in phdrs {
+        if ph.p_type != PT_LOAD { continue; }
+        let vaddr = ph.p_vaddr;
+        let filesz = ph.p_filesz as usize;
+        let memsz = ph.p_memsz as usize;
+        let offset = ph.p_offset as usize;
+        let dest = (base_addr + (vaddr - lowest_vaddr)) as *mut u8;
+        unsafe {
+            if offset + filesz <= kernel_raw.len() {
+                ptr::copy_nonoverlapping(kernel_raw.as_ptr().add(offset), dest, filesz);
+            }
+            if filesz < memsz {
+                ptr::write_bytes(dest.add(filesz), 0, memsz - filesz);
+            }
+        }
+    }
+    (base_addr, (entry_vaddr, 0)) // virt == phys on x86_64
+}
+
+/// aarch64: allocates kernel at 0x40000000 (identity-mapped), sets up simple identity page tables.
+#[cfg(target_arch = "aarch64")]
+fn load_kernel(st: &mut SystemTable<Boot>, phdrs: &[Elf64Phdr], kernel_raw: &[u8], _entry_vaddr: u64) -> (u64, (u64, u64)) {
+    const KERNEL_VA: u64 = 0x40000000; // Kernel linked at this address (identity-mapped)
+
+    let mut lowest_vaddr = u64::MAX;
+    let mut highest_end: u64 = 0;
+    for ph in phdrs {
+        if ph.p_type != PT_LOAD { continue; }
+        let vaddr = ph.p_vaddr & !0xFFF;
+        let end = (ph.p_vaddr + ph.p_memsz + 0xFFF) & !0xFFF;
+        if vaddr < lowest_vaddr { lowest_vaddr = vaddr; }
+        if end > highest_end { highest_end = end; }
+    }
+    let total_pages = ((highest_end - lowest_vaddr) / 0x1000) as usize;
+
+    // Allocate kernel at fixed address 0x40000000
+    let phys_base = st.boot_services().allocate_pages(AllocateType::Address(KERNEL_VA), MemoryType::LOADER_DATA, total_pages);
+    let phys_base = match phys_base {
+        Ok(a) => a,
+        Err(e) => { println!("alloc failed at {:x}, {} pages: {:?}", KERNEL_VA, total_pages, e); return (0, (0, 0)); }
+    };
+    println!("kernel: phys={:x} ({} pages)", phys_base, total_pages);
+
+    // Copy segments
+    for ph in phdrs {
+        if ph.p_type != PT_LOAD { continue; }
+        let filesz = ph.p_filesz as usize;
+        let memsz = ph.p_memsz as usize;
+        let offset = ph.p_offset as usize;
+        let dest = (phys_base + (ph.p_vaddr - lowest_vaddr)) as *mut u8;
+        unsafe {
+            if offset + filesz <= kernel_raw.len() {
+                ptr::copy_nonoverlapping(kernel_raw.as_ptr().add(offset), dest, filesz);
+            }
+            if filesz < memsz {
+                ptr::write_bytes(dest.add(filesz), 0, memsz - filesz);
+            }
+        }
+    }
+
+    // Simple identity page tables using only L1 block entries
+    // Allocate 1 page for L0 + L1 combined (L0 has 1 entry, L1 has 512 entries = 4096 bytes)
+    let pt_base = st.boot_services().allocate_pages(AllocateType::AnyPages, MemoryType::LOADER_DATA, 2).unwrap_or(0);
+    if pt_base == 0 {
+        println!("failed to allocate page tables");
+        return (0, (0, 0));
+    }
+    let l0_table = pt_base;
+    let l1_table = pt_base + 0x1000;
+
+    unsafe {
+        ptr::write_bytes(l0_table as *mut u8, 0, 0x2000);
+    }
+
+    // L0[0] -> L1
+    unsafe { *(l0_table as *mut u64) = l1_table | 0x3; }
+
+    // L1: identity-map entire 512GB space with 1GB blocks
+    // Only need entries 0-3 to cover 4GB (enough for virt machine)
+    let l1 = l1_table as *mut u64;
+    let block_attr = 0x743u64; // Valid + Block + AF + AP(01) + SH(11)
+    unsafe {
+        // Map first 4GB: L1[0]=0x0, L1[1]=0x40000000, L1[2]=0x80000000, L1[3]=0xC0000000
+        for i in 0..4u64 {
+            *l1.add(i as usize) = (i << 30) | block_attr;
+        }
+        // Map up to 512GB for completeness
+        for i in 4..512u64 {
+            *l1.add(i as usize) = (i << 30) | block_attr;
+        }
+    }
+
+    println!("page tables: L0={:x}, identity map", l0_table);
+
+    // Entry point is at the ELF's entry address (which is now 0x40000000 + offset)
+    let entry_va = _entry_vaddr;
+
+    (phys_base, (l0_table, entry_va))
+}
+
 #[entry]
 fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
     init(&mut st).unwrap();
@@ -98,7 +226,7 @@ fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
         read_file(root, &name)
     };
 
-    let (entry, phdrs) = match kernel_raw {
+    let (entry_vaddr, phdrs) = match kernel_raw {
         Some(ref data) => match parse_elf(data) {
             Some((e, p)) => { println!("entry={:x}", e); (e, p) }
             None => { println!("bad ELF"); return Status::LOAD_ERROR; }
@@ -106,46 +234,17 @@ fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
         None => { println!("no kernel"); return Status::LOAD_ERROR; }
     };
 
-    // Calculate total range needed
-    let mut lowest_vaddr = u64::MAX;
-    let mut highest_end: u64 = 0;
-    for ph in phdrs {
-        if ph.p_type != PT_LOAD { continue; }
-        let vaddr = ph.p_vaddr & !0xFFF;
-        let end = (ph.p_vaddr + ph.p_memsz + 0xFFF) & !0xFFF;
-        if vaddr < lowest_vaddr { lowest_vaddr = vaddr; }
-        if end > highest_end { highest_end = end; }
-    }
-    let total_pages = ((highest_end - lowest_vaddr) / 0x1000) as usize;
-
-    // Allocate the entire kernel range as one contiguous block
-    let base_addr = st.boot_services().allocate_pages(AllocateType::Address(lowest_vaddr), MemoryType::LOADER_DATA, total_pages);
-    let base_addr = match base_addr {
-        Ok(a) => a,
-        Err(e) => { println!("alloc failed at {:x}, {} pages: {:?}", lowest_vaddr, total_pages, e); return Status::LOAD_ERROR; }
-    };
-    println!("kernel: vaddr={:x} -> phys={:x} ({} pages)", lowest_vaddr, base_addr, total_pages);
-
-    // Copy each segment into the allocated block
-    for ph in phdrs {
-        if ph.p_type != PT_LOAD { continue; }
-        let vaddr = ph.p_vaddr;
-        let filesz = ph.p_filesz as usize;
-        let memsz = ph.p_memsz as usize;
-        let offset = ph.p_offset as usize;
-        let dest = (base_addr + (vaddr - lowest_vaddr)) as *mut u8;
-
-        unsafe {
-            if offset + filesz <= kernel_raw.as_ref().unwrap().len() {
-                ptr::copy_nonoverlapping(kernel_raw.as_ref().unwrap().as_ptr().add(offset), dest, filesz);
-            }
-            if filesz < memsz {
-                ptr::write_bytes(dest.add(filesz), 0, memsz - filesz);
-            }
-        }
+    let (kernel_phys_base, extra) = load_kernel(&mut st, phdrs, kernel_raw.as_ref().unwrap(), entry_vaddr);
+    if kernel_phys_base == 0 {
+        return Status::LOAD_ERROR;
     }
 
-    println!("kernel loaded at expected address");
+    println!("kernel loaded");
+
+    #[cfg(target_arch = "aarch64")]
+    let (page_table_phys, kernel_entry_vaddr) = (extra.0, extra.1);
+    #[cfg(target_arch = "x86_64")]
+    let (kernel_entry_vaddr, _unused) = (entry_vaddr, extra);
 
     let (fb_ptr, regions_ptr, regions_len, rsdp) = {
         let fb = {
@@ -219,29 +318,36 @@ fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
     let (_st_runtime, _) = st.exit_boot_services(MemoryType::LOADER_DATA);
     unsafe { uart_putc(b'X'); }
 
-    // Kernel was loaded at its expected virtual address, no page tables needed
-    // Just switch stack and jump
+    // Compute kernel entry point (virtual address)
+    let kernel_entry = if kernel_phys_base != 0 {
+        // On aarch64, entry is at virtual address 0x10000000 (where the kernel is linked)
+        // On x86_64, kernel_phys_base == 0x10000000 (allocated at linked address)
+        0x10000000u64
+    } else {
+        return Status::LOAD_ERROR;
+    };
+
     #[cfg(target_arch = "x86_64")]
     unsafe {
         core::arch::asm!(
             "mov rsp, {stack}",
             "mov rdi, {bi}",
             "jmp {entry}",
-            entry = in(reg) entry,
+            entry = in(reg) kernel_entry_vaddr,
             stack = in(reg) stack_top,
             bi = in(reg) bi_ptr,
         );
     }
-
     #[cfg(target_arch = "aarch64")]
     unsafe {
+        // Jump to kernel at identity-mapped address (0x40000000)
         core::arch::asm!(
-            "mov sp, {stack}",
             "mov x0, {bi}",
+            "mov sp, {stack}",
             "br {entry}",
-            entry = in(reg) entry,
-            stack = in(reg) stack_top,
+            entry = in(reg) kernel_entry_vaddr,
             bi = in(reg) bi_ptr,
+            stack = in(reg) stack_top,
         );
     }
     unreachable!();
