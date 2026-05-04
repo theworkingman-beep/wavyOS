@@ -1,7 +1,7 @@
 ENTRY(kernel_main)
 
 SECTIONS {
-    . = 0x100000;
+    . = 0x10000000;
     .text : {
         *(.text*)
     }

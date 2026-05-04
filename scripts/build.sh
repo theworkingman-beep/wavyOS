@@ -82,12 +82,12 @@ echo "[4/5] Creating bootable ISO..."
 if [ "$BUILD_ISO" = "1" ] && command -v grub-mkrescue >/dev/null 2>&1; then
     ISO_TMP="${ROOT_DIR}/build/iso_tmp"
     rm -rf "${ISO_TMP}"
-    mkdir -p "${ISO_TMP}/EFI/BOOT" "${ISO_TMP}/boot/grub" "${ISO_TMP}/vibeos"
+    mkdir -p "${ISO_TMP}/EFI/BOOT" "${ISO_TMP}/boot/grub"
     if [ -f "${BOOTLOADER_EFI}" ]; then
         cp "${BOOTLOADER_EFI}" "${ISO_TMP}/EFI/BOOT/${EFI_NAME}"
     fi
     if [ -f "${KERNEL_ELF}" ]; then
-        cp "${KERNEL_ELF}" "${ISO_TMP}/vibeos/kernel"
+        cp "${KERNEL_ELF}" "${ISO_TMP}/EFI/BOOT/kernel"
     fi
     cat > "${ISO_TMP}/boot/grub/grub.cfg" << GRUBEOF
 set timeout=0
@@ -97,6 +97,20 @@ menuentry "Vibe Coded OS" {
     chainloader /EFI/BOOT/${EFI_NAME}
 }
 GRUBEOF
+
+    # Pre-build efi.img as FAT filesystem (grub-mkrescue doesn't reliably do this)
+    EFI_IMG="${ISO_TMP}/efi.img"
+    dd if=/dev/zero of="${EFI_IMG}" bs=1k count=2880 2>/dev/null
+    mkfs.fat -F 12 -n "VIBEOS_EFI" "${EFI_IMG}" >/dev/null 2>&1
+    if [ -f "${ISO_TMP}/EFI/BOOT/${EFI_NAME}" ]; then
+        mmd -i "${EFI_IMG}" ::/EFI >/dev/null 2>&1
+        mmd -i "${EFI_IMG}" ::/EFI/BOOT >/dev/null 2>&1
+        mcopy -i "${EFI_IMG}" "${ISO_TMP}/EFI/BOOT/${EFI_NAME}" "::/EFI/BOOT/${EFI_NAME}" >/dev/null 2>&1
+    fi
+    if [ -f "${ISO_TMP}/EFI/BOOT/kernel" ]; then
+        mcopy -i "${EFI_IMG}" "${ISO_TMP}/EFI/BOOT/kernel" "::/kernel" >/dev/null 2>&1
+    fi
+
     grub-mkrescue -o "${ISO}" "${ISO_TMP}" >/dev/null 2>&1 || true
     rm -rf "${ISO_TMP}"
     if [ -f "${ISO}" ]; then

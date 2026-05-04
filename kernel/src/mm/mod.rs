@@ -21,17 +21,34 @@ pub unsafe fn allocate_stack_top() -> usize {
 }
 
 pub fn init(memory_map: &[MemoryRegion]) {
+    // Find the largest usable memory region that doesn't overlap with the kernel
+    let kernel_start = 0x10000000usize;
+    let kernel_end = 0x10000000 + 11 * 4096; // ~44 KB for kernel
+
     let mut heap_start = 0;
     let mut heap_size = 0;
 
     for region in memory_map {
-        if let MemoryRegionKind::Usable = region.kind {
-            if region.length as usize > heap_size {
-                heap_start = region.base as usize + 0x100_0000;
-                heap_size = region.length as usize - 0x100_0000;
-            }
+        let MemoryRegionKind::Usable = region.kind else { continue; };
+        let r_start = region.base as usize;
+        let r_end = r_start + region.length as usize;
+
+        // Skip regions that overlap with kernel
+        if r_start < kernel_end && r_end > kernel_start { continue; }
+
+        if region.length as usize > heap_size {
+            heap_start = r_start;
+            heap_size = region.length as usize;
         }
     }
+
+    // Reserve 1 MB at the start of the heap region for kernel data structures
+    if heap_size > 0x100000 {
+        heap_start += 0x100000;
+        heap_size -= 0x100000;
+    }
+
+    log::info!("heap: start={:x}, size={}", heap_start, heap_size);
 
     unsafe {
         HEAP_START = heap_start;

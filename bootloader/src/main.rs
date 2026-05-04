@@ -17,11 +17,23 @@ use common::{BootInfo, FramebufferInfo, MemoryRegion, MemoryRegionKind};
 const ELFMAG: [u8;4] = *b"\x7fELF";
 const PT_LOAD: u32 = 1;
 
+// Page table entry flags
+const PAGE_PRESENT: u64 = 1 << 0;
+const PAGE_WRITABLE: u64 = 1 << 1;
+const PAGE_HUGE: u64 = 1 << 7;
+
 #[repr(C)]
 struct Elf64Ehdr { e_ident:[u8;16], e_type:u16, e_machine:u16, e_version:u32, e_entry:u64, e_phoff:u64, e_shoff:u64, e_flags:u32, e_ehsize:u16, e_phentsize:u16, e_phnum:u16, e_shentsize:u16, e_shnum:u16, e_shstrndx:u16 }
 
 #[repr(C)]
 struct Elf64Phdr { p_type:u32, p_flags:u32, p_offset:u64, p_vaddr:u64, p_paddr:u64, p_filesz:u64, p_memsz:u64, p_align:u64 }
+
+/// Segment load info: virtual address and physical address
+struct SegmentMap {
+    vaddr: u64,
+    paddr: u64,
+    pages: usize,
+}
 
 fn kind_from_efi(ty: MemoryType) -> MemoryRegionKind {
     match ty {
@@ -69,6 +81,150 @@ fn parse_elf(data: &[u8]) -> Option<(u64, &[Elf64Phdr])> {
     Some((entry, phdrs))
 }
 
+/// Allocate a zeroed 4KB page for page table use
+fn alloc_pt_page(bs: &uefi::table::boot::BootServices) -> Result<u64, uefi::Error> {
+    bs.allocate_pages(AllocateType::AnyPages, MemoryType::LOADER_DATA, 1)
+}
+
+/// Set up page tables mapping kernel virtual addresses to physical addresses
+/// Also identity-maps all physical memory up to max_phys
+/// Returns the physical address of the PML4 table (for CR3)
+fn setup_page_tables(
+    bs: &uefi::table::boot::BootServices,
+    segments: &[SegmentMap],
+    max_phys: u64,
+) -> Result<u64, uefi::Error> {
+    // Allocate PML4 (Level 4)
+    let pml4_phys = alloc_pt_page(bs)?;
+    let pml4 = unsafe { &mut *(pml4_phys as *mut [u64; 512]) };
+    pml4.iter_mut().for_each(|e| *e = 0);
+
+    // Identity-map all physical memory up to max_phys using 2MB huge pages
+    // x86_64 layout: PML4[9] -> PDPT[9] -> PD[9] -> 2MB page
+    // For addr P: PML4=(P>>39)&0x1FF, PDPT=(P>>30)&0x1FF, PD=(P>>21)&0x1FF
+    let mut addr: u64 = 0;
+    while addr < max_phys {
+        let pml4_idx = ((addr >> 39) & 0x1FF) as usize;
+        let pdpt_idx = ((addr >> 30) & 0x1FF) as usize;
+        let pd_idx = ((addr >> 21) & 0x1FF) as usize;
+
+        // Get or create PDPT
+        if pml4[pml4_idx] & PAGE_PRESENT == 0 {
+            let phys = alloc_pt_page(bs)?;
+            unsafe { &mut *(phys as *mut [u64; 512]) }.iter_mut().for_each(|e| *e = 0);
+            pml4[pml4_idx] = phys | PAGE_PRESENT | PAGE_WRITABLE;
+        }
+        let pdpt_phys = pml4[pml4_idx] & !0xFFF;
+        let pdpt = unsafe { &mut *(pdpt_phys as *mut [u64; 512]) };
+
+        // Get or create PD
+        if pdpt[pdpt_idx] & PAGE_PRESENT == 0 {
+            let phys = alloc_pt_page(bs)?;
+            unsafe { &mut *(phys as *mut [u64; 512]) }.iter_mut().for_each(|e| *e = 0);
+            pdpt[pdpt_idx] = phys | PAGE_PRESENT | PAGE_WRITABLE;
+        }
+        let pd_phys = pdpt[pdpt_idx] & !0xFFF;
+        let pd = unsafe { &mut *(pd_phys as *mut [u64; 512]) };
+
+        // Set 2MB huge page (skip if already set, e.g., by kernel mapping)
+        if pd[pd_idx] & PAGE_PRESENT == 0 {
+            pd[pd_idx] = addr | PAGE_PRESENT | PAGE_WRITABLE | PAGE_HUGE;
+        }
+
+        addr += 0x200000; // 2MB
+    }
+
+    // Map kernel virtual addresses to physical addresses using 4KB pages
+    for seg in segments {
+        let mut vpage = seg.vaddr >> 12;
+        let mut ppage = seg.paddr >> 12;
+        let end_vpage = vpage + seg.pages as u64;
+
+        while vpage < end_vpage {
+            let pml4_idx = ((vpage >> 27) & 0x1FF) as usize;
+            let pdpt_idx = ((vpage >> 18) & 0x1FF) as usize;
+            let pd_idx = ((vpage >> 9) & 0x1FF) as usize;
+            let pt_idx = (vpage & 0x1FF) as usize;
+
+            // Get or create PDPT (might already exist from identity mapping)
+            let pdpt_phys = if pml4[pml4_idx] & PAGE_PRESENT != 0 {
+                pml4[pml4_idx] & !0xFFF
+            } else {
+                let phys = alloc_pt_page(bs)?;
+                unsafe { &mut *(phys as *mut [u64; 512]) }.iter_mut().for_each(|e| *e = 0);
+                pml4[pml4_idx] = phys | PAGE_PRESENT | PAGE_WRITABLE;
+                phys
+            };
+
+            let pdpt = unsafe { &mut *(pdpt_phys as *mut [u64; 512]) };
+
+            let pd_phys = if pdpt[pdpt_idx] & PAGE_PRESENT != 0 {
+                pdpt[pdpt_idx] & !0xFFF
+            } else {
+                let phys = alloc_pt_page(bs)?;
+                unsafe { &mut *(phys as *mut [u64; 512]) }.iter_mut().for_each(|e| *e = 0);
+                pdpt[pdpt_idx] = phys | PAGE_PRESENT | PAGE_WRITABLE;
+                phys
+            };
+
+            let pd = unsafe { &mut *(pd_phys as *mut [u64; 512]) };
+
+            // Check if this PD entry is a 2MB huge page (from identity mapping)
+            // If so, replace it with a PT pointer
+            if pd[pd_idx] & PAGE_HUGE != 0 {
+                let phys = alloc_pt_page(bs)?;
+                unsafe { &mut *(phys as *mut [u64; 512]) }.iter_mut().for_each(|e| *e = 0);
+                pd[pd_idx] = phys | PAGE_PRESENT | PAGE_WRITABLE;
+            }
+
+            let pt_phys = if pd[pd_idx] & PAGE_PRESENT != 0 {
+                pd[pd_idx] & !0xFFF
+            } else {
+                let phys = alloc_pt_page(bs)?;
+                unsafe { &mut *(phys as *mut [u64; 512]) }.iter_mut().for_each(|e| *e = 0);
+                pd[pd_idx] = phys | PAGE_PRESENT | PAGE_WRITABLE;
+                phys
+            };
+
+            let pt = unsafe { &mut *(pt_phys as *mut [u64; 512]) };
+            pt[pt_idx] = (ppage << 12) | PAGE_PRESENT | PAGE_WRITABLE;
+
+            vpage += 1;
+            ppage += 1;
+        }
+    }
+
+    Ok(pml4_phys)
+}
+
+/// Write a byte to COM1 UART
+unsafe fn uart_putc(c: u8) {
+    let mut val: u8;
+    // Wait for transmit buffer empty
+    loop {
+        core::arch::asm!("in al, dx", out("al") val, in("dx") 0x3FDu16);
+        if val & 0x20 != 0 { break; }
+    }
+    // Write character
+    core::arch::asm!("out dx, al", in("dx") 0x3F8u16, in("al") c);
+}
+unsafe fn enable_paging(pml4_phys: u64) {
+    // Load CR3 with PML4 physical address
+    core::arch::asm!("mov cr3, {}", in(reg) pml4_phys);
+
+    // Enable PAE (Physical Address Extension) - set bit 5 in CR4
+    let mut cr4: u64;
+    core::arch::asm!("mov {}, cr4", out(reg) cr4);
+    cr4 |= 1 << 5; // PAE
+    core::arch::asm!("mov cr4, {}", in(reg) cr4);
+
+    // Enable paging - set bit 31 in CR0
+    let mut cr0: u64;
+    core::arch::asm!("mov {}, cr0", out(reg) cr0);
+    cr0 |= 1 << 31; // PG
+    core::arch::asm!("mov cr0, {}", in(reg) cr0);
+}
+
 #[entry]
 fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
     init(&mut st).unwrap();
@@ -90,23 +246,55 @@ fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
         None => { println!("no kernel"); return Status::LOAD_ERROR; }
     };
 
+    let mut segments = alloc::vec::Vec::new();
+
+    // Calculate total range needed
+    let mut lowest_vaddr = u64::MAX;
+    let mut highest_end: u64 = 0;
     for ph in phdrs {
         if ph.p_type != PT_LOAD { continue; }
-        let vaddr = ph.p_vaddr; let filesz = ph.p_filesz; let memsz = ph.p_memsz; let offset = ph.p_offset as usize;
-        let paddr = vaddr & !0xFFF;
-        let page_count = ((vaddr + memsz - paddr + 0xFFF) / 0x1000) as usize;
-        let addr = st.boot_services().allocate_pages(AllocateType::Address(paddr), MemoryType::LOADER_DATA, page_count).unwrap();
-        let dest = addr as *mut u8;
+        let vaddr = ph.p_vaddr & !0xFFF;
+        let end = ((ph.p_vaddr + ph.p_memsz + 0xFFF) & !0xFFF);
+        if vaddr < lowest_vaddr { lowest_vaddr = vaddr; }
+        if end > highest_end { highest_end = end; }
+    }
+    let total_pages = ((highest_end - lowest_vaddr) / 0x1000) as usize;
+
+    // Allocate the entire kernel range as one contiguous block
+    let base_addr = st.boot_services().allocate_pages(AllocateType::Address(lowest_vaddr), MemoryType::LOADER_DATA, total_pages);
+    let base_addr = match base_addr {
+        Ok(a) => a,
+        Err(e) => { println!("alloc failed at {:x}, {} pages: {:?}", lowest_vaddr, total_pages, e); return Status::LOAD_ERROR; }
+    };
+    println!("kernel: vaddr={:x} -> phys={:x} ({} pages)", lowest_vaddr, base_addr, total_pages);
+
+    segments.push(SegmentMap {
+        vaddr: lowest_vaddr,
+        paddr: base_addr,
+        pages: total_pages,
+    });
+
+    // Copy each segment into the allocated block
+    for ph in phdrs {
+        if ph.p_type != PT_LOAD { continue; }
+        let vaddr = ph.p_vaddr;
+        let filesz = ph.p_filesz as usize;
+        let memsz = ph.p_memsz as usize;
+        let offset = ph.p_offset as usize;
+        let dest = (base_addr + (vaddr - lowest_vaddr)) as *mut u8;
+
         unsafe {
-            let off = (vaddr - paddr) as usize;
-            if offset + filesz as usize <= kernel_raw.as_ref().unwrap().len() {
-                ptr::copy_nonoverlapping(kernel_raw.as_ref().unwrap().as_ptr().add(offset), dest.add(off), filesz as usize);
+            if offset + filesz <= kernel_raw.as_ref().unwrap().len() {
+                ptr::copy_nonoverlapping(kernel_raw.as_ref().unwrap().as_ptr().add(offset), dest, filesz);
             }
             if filesz < memsz {
-                ptr::write_bytes(dest.add(off + filesz as usize), 0, (memsz - filesz) as usize);
+                ptr::write_bytes(dest.add(filesz), 0, memsz - filesz);
             }
         }
     }
+
+    // Kernel was loaded at its expected virtual address, no page tables needed
+    println!("kernel loaded at expected address");
 
     let (fb_ptr, regions_ptr, regions_len, rsdp) = {
         let fb = {
@@ -169,9 +357,28 @@ fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
     let bi_ptr = alloc::boxed::Box::into_raw(bi);
 
     println!("Exiting boot...");
+
+    // Allocate a kernel stack (16 KB) before exiting boot services
+    let stack_phys = st.boot_services().allocate_pages(AllocateType::AnyPages, MemoryType::LOADER_DATA, 4)
+        .unwrap_or(0);
+    let stack_top = stack_phys + 4 * 4096;
+    println!("kernel stack: {:x}", stack_top);
+
+    unsafe { uart_putc(b'E'); } // Mark: before exit_boot_services
     let (_st_runtime, _) = st.exit_boot_services(MemoryType::LOADER_DATA);
+    unsafe { uart_putc(b'X'); }
+
+    // Kernel was loaded at its expected virtual address, no page tables needed
+    // Just switch stack and jump
     unsafe {
-        let f: extern "C" fn(*mut BootInfo) -> ! = core::mem::transmute(entry);
-        f(bi_ptr);
+        core::arch::asm!(
+            "mov rsp, {stack}",
+            "mov rdi, {bi}",
+            "jmp {entry}",
+            entry = in(reg) entry,
+            stack = in(reg) stack_top,
+            bi = in(reg) bi_ptr,
+        );
     }
+    unreachable!();
 }
