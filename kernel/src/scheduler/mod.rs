@@ -57,12 +57,17 @@ impl Task {
     }
 
     pub fn init_context(&mut self) {
-        // Set up initial stack frame so that restore_context "returns" to entry point
         let mut rsp = self.stack_top();
-        rsp -= core::mem::size_of::<usize>();
-        // Push entry point as return address
         unsafe {
+            // Push entry point as return address (this will be at the TOP of the stack)
+            rsp -= core::mem::size_of::<usize>();
             *(rsp as *mut usize) = self.entry;
+            // Push dummy values for r15, r14, r13, r12, rbp, rbx (in reverse order of pop)
+            // switch_context pops: rbx, rbp, r12, r13, r14, r15
+            for _ in 0..6 {
+                rsp -= core::mem::size_of::<usize>();
+                *(rsp as *mut usize) = 0;
+            }
         }
         self.context.rsp = rsp;
     }
@@ -91,100 +96,98 @@ pub fn current_task_id() -> usize {
 /// Yield CPU to the next task
 pub fn yield_cpu() {
     unsafe {
-        switch_task();
+        do_switch_task();
     }
 }
 
-/// Switch to the next ready task
-pub unsafe fn switch_task() {
-    let mut tasks = TASKS.lock();
-    let len = tasks.len();
-    if len == 0 {
-        return;
-    }
-
-    // Find current task index
-    let cur_id = *CURRENT_TASK.lock();
-    let mut cur_idx = None;
-    for (i, t) in tasks.iter().enumerate() {
-        if t.id == cur_id.unwrap_or(0) {
-            cur_idx = Some(i);
-            break;
-        }
-    }
-
-    // Find next ready task (round-robin)
-    let mut next_idx = None;
-    for i in 0..len {
-        let idx = (cur_idx.unwrap_or(usize::MAX) + 1 + i) % len;
-        if tasks[idx].state != TaskState::Dead {
-            next_idx = Some(idx);
-            break;
-        }
-    }
-
-    let next_idx = match next_idx {
-        Some(n) => n,
-        None => return,
-    };
-
-    // Save current task context
-    if let Some(ci) = cur_idx {
-        tasks[ci].context.rsp = save_context(tasks[ci].context.rsp);
-    }
-
-    // Mark current task as ready
-    if let Some(ci) = cur_idx {
-        if tasks[ci].state == TaskState::Running {
-            tasks[ci].state = TaskState::Ready;
-        }
-    }
-
-    // Switch to next task
-    let next_id = tasks[next_idx].id;
-    let next_rsp = tasks[next_idx].context.rsp;
-    tasks[next_idx].state = TaskState::Running;
-    *CURRENT_TASK.lock() = Some(next_id);
-    drop(tasks);
-
-    restore_context(next_rsp);
-}
-
+/// Proper context switch: save callee-saved regs, switch stack, restore
 #[cfg(target_arch = "x86_64")]
-unsafe fn save_context(_old_rsp: usize) -> usize {
-    // Save callee-saved registers onto the old stack
-    let mut rsp = _old_rsp;
-    // Push dummy values for r15, r14, r13, r12, rbp, rbx, and entry point
-    rsp -= core::mem::size_of::<usize>();
-    *(rsp as *mut usize) = 0; // r15
-    rsp -= core::mem::size_of::<usize>();
-    *(rsp as *mut usize) = 0; // r14
-    rsp -= core::mem::size_of::<usize>();
-    *(rsp as *mut usize) = 0; // r13
-    rsp -= core::mem::size_of::<usize>();
-    *(rsp as *mut usize) = 0; // r12
-    rsp -= core::mem::size_of::<usize>();
-    *(rsp as *mut usize) = 0; // rbp
-    rsp -= core::mem::size_of::<usize>();
-    *(rsp as *mut usize) = 0; // rbx
-    rsp
+unsafe fn do_switch_task() {
+    let next_rsp: usize;
+    let old_rsp_ptr: *mut usize;
+
+    // Determine next task and get its stack pointer
+    {
+        let mut tasks = TASKS.lock();
+        let len = tasks.len();
+        if len == 0 { return; }
+
+        let cur_id = *CURRENT_TASK.lock();
+        let mut cur_idx = None;
+        for (i, t) in tasks.iter().enumerate() {
+            if t.id == cur_id.unwrap_or(0) {
+                cur_idx = Some(i);
+                break;
+            }
+        }
+
+        let mut next_idx = None;
+        for i in 0..len {
+            let idx = (cur_idx.unwrap_or(usize::MAX) + 1 + i) % len;
+            if tasks[idx].state != TaskState::Dead {
+                next_idx = Some(idx);
+                break;
+            }
+        }
+
+        let next_idx = match next_idx {
+            Some(n) => n,
+            None => return,
+        };
+
+        // Mark current as ready, next as running
+        if let Some(ci) = cur_idx {
+            if tasks[ci].state == TaskState::Running {
+                tasks[ci].state = TaskState::Ready;
+            }
+            old_rsp_ptr = &mut tasks[ci].context.rsp as *mut usize;
+        } else {
+            // No current task (first yield from kernel_main)
+            old_rsp_ptr = core::ptr::null_mut();
+        }
+
+        next_rsp = tasks[next_idx].context.rsp;
+        tasks[next_idx].state = TaskState::Running;
+        *CURRENT_TASK.lock() = Some(tasks[next_idx].id);
+    }
+
+    // Do the actual context switch in assembly
+    switch_context(old_rsp_ptr, next_rsp);
 }
 
+/// Assembly context switch - saves callee-saved regs to old task, restores from new task
 #[cfg(target_arch = "x86_64")]
-unsafe fn restore_context(new_rsp: usize) {
-    // Restore callee-saved registers and return to the task
-    core::arch::asm!(
-        "mov rsp, {rsp}",
-        "pop rbx",
-        "pop rbp",
-        "pop r12",
-        "pop r13",
-        "pop r14",
-        "pop r15",
-        "ret",
-        rsp = in(reg) new_rsp,
-        options(nomem, nostack)
-    );
+core::arch::global_asm!(
+    ".global switch_context",
+    "switch_context:",
+    // rdi = old_rsp_ptr, rsi = new_rsp
+    "test rdi, rdi",
+    "jz 1f", // if old_rsp_ptr is null (first task), skip saving
+    // Push callee-saved registers onto current stack
+    "push r15",
+    "push r14",
+    "push r13",
+    "push r12",
+    "push rbp",
+    "push rbx",
+    // Get current RSP (after pushes) and save to old task's context
+    "mov [rdi], rsp",
+    "1:",
+    // Switch to new stack
+    "mov rsp, rsi",
+    // Pop callee-saved registers
+    "pop rbx",
+    "pop rbp",
+    "pop r12",
+    "pop r13",
+    "pop r14",
+    "pop r15",
+    // Return to the task
+    "ret",
+);
+
+extern "C" {
+    fn switch_context(old_rsp_ptr: *mut usize, new_rsp: usize);
 }
 
 #[cfg(target_arch = "aarch64")]
@@ -233,7 +236,7 @@ pub fn run_scheduler() -> ! {
     drop(tasks);
 
     unsafe {
-        restore_context(first_rsp);
+        switch_context(core::ptr::null_mut(), first_rsp);
     }
 
     // Should never reach here

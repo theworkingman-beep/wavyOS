@@ -49,7 +49,6 @@ extern "x86-interrupt" fn irq1_handler(_sf: &mut InterruptStackFrame) {
 
 // Timer IRQ0 handler (scheduler tick ~100Hz)
 extern "x86-interrupt" fn irq0_handler(_sf: &mut InterruptStackFrame) {
-    crate::scheduler::yield_cpu();
     unsafe {
         core::arch::asm!("out dx, al", in("dx") 0x20u16, in("al") 0x20u8);
     }
