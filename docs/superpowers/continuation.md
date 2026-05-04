@@ -53,6 +53,11 @@ You are explicitly allowed and encouraged to cut corners where it makes sense. U
 - [x] **Implement cursor renderer** — 16x16 arrow bitmap, save/restore pixels under cursor, draw/undraw/move_cursor API, position clamping. Commit → CI release → test cursor visible and moves with mouse.
 - [x] **Implement hit-test system (wm.rs)** — TrafficLight (close/min/max), DockIcon, TitleBar, WindowBody hit targets. Pure logic, testable on host. Commit → CI release.
 - [x] **Refactor gui_task into event-driven compositor** — Poll input events, handle MouseMove (cursor + dragging), MouseDown (hit-test + dispatch), MouseUp (end drag). Commit → CI release → test click dock, drag windows, close window.
+- [x] **Add window dragging** — Track drag offset on title bar MouseDown, update window position on MouseMove during drag, end drag on MouseUp. Redraw window at new position.
+- [x] **Add dock hover highlighting** — Detect cursor over dock icons, highlight with white overlay, clear highlight when cursor leaves.
+- [x] **Add cursor black outline** — Draw 1px black border around white cursor pixels for visibility on any background.
+- [x] **Add traffic light minimize/maximize** — Minimize hides window (dock icon click restores), maximize fills screen, click again to restore original size.
+- [x] **Wire KeyPress to shell** — GUI task re-pushes KeyPress events so shell task receives them from shared input ring buffer.
 - [x] **Implement aarch64 GIC initialization + IRQ handling** — GICv2 init (distributor + CPU interface), exception vector table (VBAR_EL1), IRQ EL1 handler assembly, Rust IRQ dispatcher. Commit → CI release → test boots on aarch64 without crash.
 - [x] **Implement PL050 KMI mouse driver (aarch64)** — MMIO driver with PS/2 protocol, IRQ dispatch through GIC. Implemented but disabled by default (KMI requires `-device pl050` on QEMU virt). Keyboard available via PL011 UART IRQ.
 - [x] **Wire keyboard input to shell via input subsystem** — Update ps2kbd.rs to push KeyPress events, update shell to read from input::poll() instead of UART. Commit → CI release → test typing in shell on both architectures.
