@@ -22,21 +22,14 @@ jobs:
       - name: Calculate next version
         id: version
         run: |
-          # Get latest tag or default to 0.0.0
-          LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -1 || echo "v0.0.0")
-          if [ -z "$LATEST_TAG" ]; then
-            LATEST_TAG="v0.0.0"
-          fi
-          # Strip 'v' prefix
-          VERSION=${LATEST_TAG#v}
-          # Split into major.minor.patch
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          # Increment patch
+          # Read current version from Cargo.toml
+          CURRENT_VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
           NEW_PATCH=$((PATCH + 1))
           NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
           echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
           echo "tag=v${NEW_VERSION}" >> $GITHUB_OUTPUT
-          echo "Next version: v${NEW_VERSION}"
+          echo "Bumping from ${CURRENT_VERSION} to v${NEW_VERSION}"
 
       - name: Update version in Cargo.toml
         run: |
