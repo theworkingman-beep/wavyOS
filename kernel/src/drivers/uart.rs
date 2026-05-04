@@ -83,3 +83,30 @@ impl fmt::Write for UartWriter {
         Ok(())
     }
 }
+
+/// Handle UART receive interrupt — reads available characters and pushes them as input events
+#[cfg(target_arch = "aarch64")]
+pub fn handle_uart_irq() {
+    use crate::input::{self, InputEvent};
+
+    // Read characters from FIFO until empty
+    loop {
+        let fr = pl011_read(0x18); // UARTFR
+        // Check if RX FIFO is empty (bit 4 = RXFE)
+        if fr & 0x10 != 0 {
+            break;
+        }
+        let data = pl011_read(0x00) as u8; // UARTDR
+        // Only process valid ASCII characters (skip errors)
+        if data >= 32 && data <= 126 {
+            input::push(InputEvent::KeyPress { ascii: data });
+        } else if data == b'\r' || data == b'\n' {
+            input::push(InputEvent::KeyPress { ascii: b'\n' });
+        } else if data == 0x08 { // Backspace
+            input::push(InputEvent::KeyPress { ascii: 0x08 });
+        }
+    }
+
+    // Clear UART interrupt (ICR register)
+    pl011_write(0x44, 0xFFFF); // Clear all interrupts
+}

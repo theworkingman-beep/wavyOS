@@ -1,7 +1,7 @@
 // aarch64 HAL stubs
 
 pub fn init() {
-    // TODO: GIC, timer, UART
+    // GIC, timer, UART are handled in kernel/src/arch/aarch64.rs
 }
 
 /// Read the ARM Generic Timer CNTPCT (virtual counter).

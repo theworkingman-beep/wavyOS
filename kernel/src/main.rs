@@ -3,6 +3,14 @@
 #![no_main]
 #![cfg_attr(target_arch = "x86_64", feature(abi_x86_interrupt))]
 
+#[cfg(target_arch = "aarch64")]
+use core::arch::global_asm;
+
+#[cfg(target_arch = "aarch64")]
+global_asm!(
+    include_str!("arch/vector_table_aarch64.s"),
+);
+
 extern crate alloc;
 
 use core::panic::PanicInfo;
