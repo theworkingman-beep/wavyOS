@@ -1,0 +1,123 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Calculate next version
+        id: version
+        run: |
+          # Get latest tag or default to 0.0.0
+          LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -1 || echo "v0.0.0")
+          if [ -z "$LATEST_TAG" ]; then
+            LATEST_TAG="v0.0.0"
+          fi
+          # Strip 'v' prefix
+          VERSION=${LATEST_TAG#v}
+          # Split into major.minor.patch
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          # Increment patch
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+          echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=v${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "Next version: v${NEW_VERSION}"
+
+      - name: Update version in Cargo.toml
+        run: |
+          NEW_VER=${{ steps.version.outputs.new_version }}
+          sed -i "s/^version = \".*\"/version = \"${NEW_VER}\"/" Cargo.toml
+          echo "Updated Cargo.toml to version ${NEW_VER}"
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Cargo.toml
+          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}"
+          git push
+
+  build-and-release:
+    needs: bump-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src, llvm-tools-preview
+          targets: x86_64-unknown-none,aarch64-unknown-none,x86_64-unknown-uefi,aarch64-unknown-uefi
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 qemu-system-arm grub-efi-amd64-bin grub-efi-arm64-bin mtools xorriso
+
+      - name: Build x86_64
+        run: |
+          export TARGET_ARCH=x86_64
+          ./scripts/build.sh
+
+      - name: Build aarch64
+        run: |
+          export TARGET_ARCH=aarch64
+          ./scripts/build.sh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.bump-version.outputs.tag }}
+          name: "VibeOS ${{ needs.bump-version.outputs.new_version }}"
+          body: |
+            ## VibeOS ${{ needs.bump-version.outputs.new_version }}
+
+            Automatic release from push to main.
+
+            ### Artifacts
+            - `vibe-os-x86_64.iso` — x86_64 bootable ISO (UEFI)
+            - `vibe-os-x86_64.img` — x86_64 FAT disk image
+            - `vibe-os-aarch64.iso` — aarch64 bootable ISO (UEFI)
+            - `vibe-os-aarch64.img` — aarch64 FAT disk image
+
+            ### Boot
+            ```bash
+            # x86_64
+            qemu-system-x86_64 -machine q35 -m 512M \
+              -drive if=pflash,format=raw,unit=0,file=/usr/share/OVMF/OVMF_CODE_4M.fd,readonly=on \
+              -drive if=pflash,format=raw,unit=1,file=OVMF_VARS_4M.fd \
+              -drive format=raw,file=vibe-os-x86_64.iso
+
+            # aarch64
+            qemu-system-aarch64 -machine virt -cpu cortex-a72 -m 512M \
+              -drive if=pflash,format=raw,unit=0,file=/usr/share/AAVMF/AAVMF_CODE.fd,readonly=on \
+              -drive if=pflash,format=raw,unit=1,file=AAVMF_VARS.fd \
+              -drive format=raw,file=vibe-os-aarch64.iso
+            ```
+          files: |
+            build/vibe-os-x86_64.iso
+            build/vibe-os-x86_64.img
+            build/vibe-os-aarch64.iso
+            build/vibe-os-aarch64.img
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
