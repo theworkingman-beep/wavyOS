@@ -18,7 +18,7 @@ default-members = [
 ]
 
 [workspace.package]
-version = "0.1.17"
+version = "0.1.18"
 edition = "2021"
 authors = ["vibe-coded-os contributors"]
 license = "GPL-3.0"
