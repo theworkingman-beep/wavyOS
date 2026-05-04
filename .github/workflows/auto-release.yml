@@ -69,7 +69,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 qemu-system-arm grub-efi-amd64-bin grub-efi-arm64-bin mtools xorriso
+          sudo apt-get install -y qemu-system-x86 qemu-system-arm grub-efi-amd64-bin mtools xorriso
 
       - name: Build x86_64
         run: |

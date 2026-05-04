@@ -7,11 +7,8 @@
   "target-c-int-width": 32,
   "os": "none",
   "executables": true,
-  "linker-flavor": "gnu",
-  "linker": "/home/b/.rustup/toolchains/nightly-aarch64-unknown-linux-gnu/lib/rustlib/aarch64-unknown-linux-gnu/bin/gcc-ld/ld.lld",
-  "pre-link-args": {
-    "gnu": ["-m", "aarch64linux"]
-  },
+  "linker-flavor": "ld.lld",
+  "linker": "rust-lld",
   "panic-strategy": "abort",
   "disable-redzone": true
 }
