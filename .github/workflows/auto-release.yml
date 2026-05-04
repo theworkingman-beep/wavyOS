@@ -22,7 +22,6 @@ jobs:
       - name: Calculate next version
         id: version
         run: |
-          # Read current version from Cargo.toml
           CURRENT_VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
           NEW_PATCH=$((PATCH + 1))
@@ -45,9 +44,12 @@ jobs:
           git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}"
           git push
 
-  build-and-release:
+  build:
     needs: bump-version
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,24 +59,43 @@ jobs:
         uses: dtolnay/rust-toolchain@nightly
         with:
           components: rust-src, llvm-tools-preview
-          targets: x86_64-unknown-none,aarch64-unknown-none,x86_64-unknown-uefi,aarch64-unknown-uefi
+          targets: ${{ matrix.arch == 'x86_64' && 'x86_64-unknown-none,x86_64-unknown-uefi' || 'aarch64-unknown-none,aarch64-unknown-uefi' }}
 
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-system-x86 qemu-system-arm grub-efi-amd64-bin mtools xorriso
 
-      - name: Build x86_64
+      - name: Build ${{ matrix.arch }}
         run: |
-          export TARGET_ARCH=x86_64
+          export TARGET_ARCH=${{ matrix.arch }}
           export VERSION=${{ needs.bump-version.outputs.new_version }}
           ./scripts/build.sh
 
-      - name: Build aarch64
-        run: |
-          export TARGET_ARCH=aarch64
-          export VERSION=${{ needs.bump-version.outputs.new_version }}
-          ./scripts/build.sh
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vibe-os-${{ matrix.arch }}-${{ needs.bump-version.outputs.new_version }}
+          path: |
+            build/vibe-os-${{ matrix.arch }}-${{ needs.bump-version.outputs.new_version }}.iso
+            build/vibe-os-${{ matrix.arch }}-${{ needs.bump-version.outputs.new_version }}.img
+          retention-days: 1
+
+  release:
+    needs: [bump-version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download x86_64 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: vibe-os-x86_64-${{ needs.bump-version.outputs.new_version }}
+          path: build/
+
+      - name: Download aarch64 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: vibe-os-aarch64-${{ needs.bump-version.outputs.new_version }}
+          path: build/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
