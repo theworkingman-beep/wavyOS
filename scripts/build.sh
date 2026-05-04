@@ -53,6 +53,14 @@ BOOTLOADER_EFI="${ROOT_DIR}/target/${UEFI_TARGET}/release/bootloader.efi"
 KERNEL_ELF="${ROOT_DIR}/target/${RUST_TARGET}/release/kernel"
 IMG="${ROOT_DIR}/build/vibe-os-${TARGET_ARCH}.img"
 ISO="${ROOT_DIR}/build/vibe-os-${TARGET_ARCH}.iso"
+# Versioned names for releases
+if [ -n "${VERSION}" ]; then
+    IMG_VER="${ROOT_DIR}/build/vibe-os-${TARGET_ARCH}-${VERSION}.img"
+    ISO_VER="${ROOT_DIR}/build/vibe-os-${TARGET_ARCH}-${VERSION}.iso"
+else
+    IMG_VER="${IMG}"
+    ISO_VER="${ISO}"
+fi
 
 echo "[3/5] Creating disk image..."
 if command -v mkfs.fat >/dev/null 2>&1 && command -v mcopy >/dev/null 2>&1 && command -v mmd >/dev/null 2>&1; then
@@ -127,6 +135,14 @@ if [ "$QEMU_RUN" = "1" ]; then
     ${QEMU} ${QEMU_ARGS}
 else
     echo "[5/5] QEMU skipped (set QEMU_RUN=1 to run)"
+fi
+
+# Rename to versioned filenames if VERSION is set
+if [ -n "${VERSION}" ]; then
+    cp "${IMG}" "${IMG_VER}"
+    cp "${ISO}" "${ISO_VER}"
+    echo "Versioned: ${IMG_VER}"
+    echo "Versioned: ${ISO_VER}"
 fi
 
 echo "== Build complete =="

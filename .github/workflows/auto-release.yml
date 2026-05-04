@@ -67,11 +67,13 @@ jobs:
       - name: Build x86_64
         run: |
           export TARGET_ARCH=x86_64
+          export VERSION=${{ needs.bump-version.outputs.new_version }}
           ./scripts/build.sh
 
       - name: Build aarch64
         run: |
           export TARGET_ARCH=aarch64
+          export VERSION=${{ needs.bump-version.outputs.new_version }}
           ./scripts/build.sh
 
       - name: Create GitHub Release
@@ -105,10 +107,10 @@ jobs:
               -drive format=raw,file=vibe-os-aarch64.iso
             ```
           files: |
-            build/vibe-os-x86_64.iso
-            build/vibe-os-x86_64.img
-            build/vibe-os-aarch64.iso
-            build/vibe-os-aarch64.img
+            build/vibe-os-x86_64-${{ needs.bump-version.outputs.new_version }}.iso
+            build/vibe-os-x86_64-${{ needs.bump-version.outputs.new_version }}.img
+            build/vibe-os-aarch64-${{ needs.bump-version.outputs.new_version }}.iso
+            build/vibe-os-aarch64-${{ needs.bump-version.outputs.new_version }}.img
           generate_release_notes: true
           draft: false
           prerelease: false
