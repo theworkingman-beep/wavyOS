@@ -27,9 +27,56 @@ static CURSOR_X: AtomicU16 = AtomicU16::new(0);
 static CURSOR_Y: AtomicU16 = AtomicU16::new(0);
 
 const CURSOR_FG: u32 = 0xFFFFFF;
+const CURSOR_OUTLINE: u32 = 0x000000;
 
 pub fn init() {
     log::info!("cursor: initialized");
+}
+
+fn pixel_set(x: u16, y: u16) -> bool {
+    let bit_index = y as usize * 16 + x as usize;
+    let byte_idx = bit_index / 8;
+    let bit_idx = 7 - (bit_index % 8);
+    (CURSOR_BITMAP[byte_idx] >> bit_idx) & 1 != 0
+}
+
+unsafe fn draw_outline_pixel(x: usize, y: usize) {
+    let fb = crate::drivers::fbcon::get_framebuffer();
+    let fb_width = fb.info.width as usize;
+    if x < fb_width && y < fb.info.height as usize {
+        crate::drivers::fbcon::set_pixel(x, y, CURSOR_OUTLINE);
+    }
+}
+
+unsafe fn draw_cursor_pixels(x: u16, y: u16) {
+    let fb = crate::drivers::fbcon::get_framebuffer();
+    let fb_width = fb.info.width as usize;
+
+    for cy in 0..16u16 {
+        for cx in 0..16u16 {
+            if !pixel_set(cx, cy) {
+                continue;
+            }
+            let px = (x + cx) as usize;
+            let py = (y + cy) as usize;
+            if px < fb_width && py < fb.info.height as usize {
+                crate::drivers::fbcon::set_pixel(px, py, CURSOR_FG);
+            }
+
+            if cx > 0 && !pixel_set(cx - 1, cy) {
+                draw_outline_pixel(px - 1, py);
+            }
+            if cx < 15 && !pixel_set(cx + 1, cy) {
+                draw_outline_pixel(px + 1, py);
+            }
+            if cy > 0 && !pixel_set(cx, cy - 1) {
+                draw_outline_pixel(px, py - 1);
+            }
+            if cy < 15 && !pixel_set(cx, cy + 1) {
+                draw_outline_pixel(px, py + 1);
+            }
+        }
+    }
 }
 
 pub fn clamp_position(x: i32, y: i32, max_x: u16, max_y: u16) -> (u16, u16) {
@@ -100,27 +147,7 @@ pub fn move_cursor(new_x: u16, new_y: u16) {
     draw(x, y);
 }
 
-unsafe fn draw_cursor_pixels(x: u16, y: u16) {
-    let fb = crate::drivers::fbcon::get_framebuffer();
-    let fb_width = fb.info.width as usize;
 
-    for cy in 0..16u16 {
-        for cx in 0..16u16 {
-            let bit_index = (cy as usize * 16 + cx as usize);
-            let byte_idx = bit_index / 8;
-            let bit_idx = 7 - (bit_index % 8);
-            let set = (CURSOR_BITMAP[byte_idx] >> bit_idx) & 1 != 0;
-
-            if set {
-                let px = (x + cx) as usize;
-                let py = (y + cy) as usize;
-                if px < fb_width && py < fb.info.height as usize {
-                    crate::drivers::fbcon::set_pixel(px, py, CURSOR_FG);
-                }
-            }
-        }
-    }
-}
 
 unsafe fn restore_pixels(x: u16, y: u16) {
     let fb = crate::drivers::fbcon::get_framebuffer();

@@ -38,7 +38,7 @@ pub fn hit_test(x: u16, y: u16, layout: &DesktopLayout) -> HitTarget {
         return HitTarget::TrafficLight(TrafficLight::Maximize);
     }
 
-    if x >= layout.win_x + 60
+    if x >= layout.win_x
         && x < layout.win_x + layout.win_w
         && y >= layout.win_y
         && y < layout.win_y + title_h
@@ -69,6 +69,22 @@ pub fn hit_test(x: u16, y: u16, layout: &DesktopLayout) -> HitTarget {
     }
 
     HitTarget::None
+}
+
+pub fn hit_test_dock_icon(x: u16, y: u16, layout: &DesktopLayout) -> Option<usize> {
+    let icon_size: u16 = 48;
+    let icon_spacing: u16 = 12;
+    let start_x = layout.dock_x + 16;
+
+    if y >= layout.dock_y && y < layout.dock_y + 70 {
+        for i in 0..5 {
+            let ix = start_x + i * (icon_size + icon_spacing);
+            if x >= ix && x < ix + icon_size {
+                return Some(i as usize);
+            }
+        }
+    }
+    None
 }
 
 fn circle_hit(px: u16, py: u16, cx: u16, cy: u16, r: u16) -> bool {
