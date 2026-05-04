@@ -7,22 +7,26 @@ Add mouse cursor, keyboard input, and GUI event handling to VibeOS. The desktop 
 ## Architecture
 
 ```
-PS/2 Mouse IRQ 12 ─┐
-                    ├─► kernel/src/input.rs ──► gui_task event loop ──► hit-test ──► render
-PS/2 Keyboard IRQ 1 ┘
+x86_64: PS/2 Mouse IRQ 12 ────┐
+x86_64: PS/2 Keyboard IRQ 1 ──┤──► input.rs ──► gui_task event loop ──► hit-test ──► render
+aarch64: PL050 KMI mouse ─────┤
+aarch64: PL011 UART keyboard ─┘
 ```
 
 ### Components
 
-1. **PS/2 Mouse Driver** (`kernel/src/drivers/ps2mouse.rs`) — x86_64 only, PS/2 protocol
-2. **Input Subsystem** (`kernel/src/input.rs`) — Unified event queue for keyboard + mouse
-3. **Cursor Renderer** (in `kernel/src/drivers/fbcon.rs` or new `kernel/src/drivers/cursor.rs`) — 16x16 arrow bitmap with save/restore
-4. **GUI Event Loop** (refactored `gui_task` in `kernel/src/main.rs`) — Event-driven compositor
-5. **Hit-Test System** (in `gui_task` or new `kernel/src/wm.rs`) — Determine which UI element is at (x, y)
+1. **PS/2 Mouse Driver** (`kernel/src/drivers/ps2mouse.rs`) — x86_64, IRQ 12
+2. **PL050 KMI Mouse Driver** (`kernel/src/drivers/pl050_mouse.rs`) — aarch64, MMIO 0x09004000
+3. **Input Subsystem** (`kernel/src/input.rs`) — Unified event queue for keyboard + mouse
+4. **Cursor Renderer** (`kernel/src/drivers/cursor.rs`) — 16x16 arrow bitmap with save/restore
+5. **GUI Event Loop** (refactored `gui_task` in `kernel/src/main.rs`) — Event-driven compositor
+6. **Hit-Test System** (in `kernel/src/wm.rs`) — Determine which UI element is at (x, y)
 
 ## Component Details
 
-### 1. PS/2 Mouse Driver
+### 1. Mouse Drivers
+
+**x86_64: PS/2 Mouse Driver** (`kernel/src/drivers/ps2mouse.rs`)
 
 - IRQ 12 on PIC2 (interrupt 0x2C)
 - Protocol: 3-byte packets `[buttons, dx, dy]`
@@ -34,8 +38,21 @@ PS/2 Keyboard IRQ 1 ┘
   5. Send 0xF4 to port 0x60 — Enable mouse data reporting
 - State machine in IRQ handler: collect 3 bytes per packet
 - Decode: `buttons` byte has bits 0=left, 1=right, 2=middle; `dx`/`dy` are signed deltas with overflow bits
-- Stores `MouseState { x: u16, y: u16, left: bool, right: bool, middle: bool }` as atomic/locked struct
-- aarch64 stub: returns no-op mouse state (QEMU virt machine doesn't have PS/2 mouse)
+
+**aarch64: PL050 KMI Mouse Driver** (`kernel/src/drivers/pl050_mouse.rs`)
+
+- QEMU virt machine exposes a PL050 KMI (Keyboard/Mouse Interface) for mouse at MMIO `0x09004000`
+- Uses same PS/2 protocol but via MMIO registers instead of I/O ports
+- Register layout: `DATA` at offset 0x00, `STATUS` at offset 0x04, `COMMAND` at offset 0x08, `CONTROL` at offset 0x010
+- IRQ for mouse KMI — configured via GIC (or polled if GIC not yet set up)
+- Same 3-byte packet state machine as PS/2 mouse
+- Enable: set CONTROL register to enable Rx interrupts and KMI
+
+**Shared Mouse State**
+
+- Both drivers write to a common `MouseState { x: u16, y: u16, left: bool, right: bool, middle: bool }` protected by `spin::Mutex`
+- `pub fn mouse_init()` — calls arch-appropriate driver init
+- `pub fn read_mouse() -> MouseState` — arch-independent accessor
 
 ### 2. Input Subsystem (`kernel/src/input.rs`)
 
@@ -108,29 +125,52 @@ Hit-test order (front to back):
 ## Data Flow
 
 ```
-PS/2 IRQ handlers (irq1, irq12)
-  │
-  ▼
-input.rs event queue (ring buffer)
-  │
-  ▼
-gui_task: while let Some(evt) = input::poll() { ... }
-  │
-  ├── MouseMove  ─► update cursor position ─► undraw/ redraw cursor ─► check hover
-  ├── MouseDown  ─► hit_test(cursor_x, cursor_y) ─► dispatch action
-  ├── MouseUp    ─► end drag if active
-  └── KeyPress   ─► forward to shell task
+x86_64: PS/2 IRQ handlers (irq1, irq12) ─┐
+                                          ├─► input.rs event queue ──► gui_task event loop
+aarch64: UART PL011 + PL050 KMI ─────────┘
+```
+
+## Data Flow
+
+```
+┌─────────────────────────────────┐
+│  IRQ Handlers (arch-specific)   │
+│  x86_64: PS/2 IRQ 1 + IRQ 12    │
+│  aarch64: PL011 UART + PL050    │
+└──────────────┬──────────────────┘
+               │ push events
+               ▼
+┌─────────────────────────────────┐
+│  input.rs event queue           │
+│  (ring buffer, 256 entries)     │
+│  InputEvent enum                │
+└──────────────┬──────────────────┘
+               │ poll()
+               ▼
+┌─────────────────────────────────┐
+│  gui_task event loop            │
+│  ┌───────────────────────────┐  │
+│  │ undraw cursor (old pos)   │  │
+│  │ poll() → dispatch events  │  │
+│  │   MouseMove → update pos  │  │
+│  │   MouseDown → hit_test    │  │
+│  │   MouseUp → end drag      │  │
+│  │   KeyPress → shell input  │  │
+│  │ draw cursor (new pos)     │  │
+│  └───────────────────────────┘  │
+│  scheduler::yield_cpu()         │
+└─────────────────────────────────┘
 ```
 
 ## Constraints
 
 - Cooperative scheduler only — no preemption. Input events are only processed when gui_task runs
-- x86_64 only for mouse driver (aarch64 QEMU virt has no PS/2 mouse; will need virtio or device tree support later)
-- Keyboard already works on both arches (UART on aarch64, PS/2 on x86_64)
+- Mouse supported on both arches: PS/2 on x86_64 (IRQ 12), PL050 KMI on aarch64 (MMIO 0x09004000)
+- Keyboard on both arches: PS/2 on x86_64 (IRQ 1), PL011 UART on aarch64
 - Single window for now (the welcome window); no window creation/destruction beyond traffic light buttons
 
 ## Testing
 
 - QEMU x86_64: mouse should move cursor, click dock to activate shell, type in shell
-- QEMU aarch64: keyboard input via UART (shell still works), no mouse expected
+- QEMU aarch64: mouse via PL050 KMI should work same as x86_64, keyboard via UART for shell input
 - No crash on input overflow or malformed PS/2 packets
