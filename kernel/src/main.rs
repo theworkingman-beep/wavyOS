@@ -28,6 +28,7 @@ mod drivers;
 mod userland;
 mod input;
 mod wm;
+mod fs;
 
 #[cfg(target_arch = "x86_64")]
 use arch::x86_64 as arch_impl;
@@ -464,6 +465,7 @@ pub extern "C" fn kernel_main(boot_info: *mut BootInfo) -> ! {
     ipc::init();
     shm::init();
     compat::init();
+    fs::init();
     userland::init();
     syscalls::init();
 
