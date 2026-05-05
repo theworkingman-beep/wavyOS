@@ -13,13 +13,31 @@ const VIRTIO_VENDOR_ID: u16 = 0x1AF4;
 const VIRTIO_NET_DEVICE_ID_LEGACY: u16 = 0x1000;
 const VIRTIO_NET_DEVICE_ID_MODERN: u16 = 0x1041;
 
+/// Virtio-net header flags
+const VIRTIO_NET_HDR_F_NEEDS_CSUM: u16 = 1;
+const VIRTIO_NET_HDR_GSO_NONE: u8 = 0;
+
 /// Maximum packet size for Ethernet
-const MAX_PACKET_SIZE: usize = 1526;
+const MAX_PACKET_SIZE: usize = 1526; // Ethernet + possible VLAN tag
+
+/// Virtio-net header (legacy)
+#[repr(C)]
+struct VirtioNetHdr {
+    flags: u8,
+    gso_type: u8,
+    hdr_len: u16,
+    gso_size: u16,
+    csum_start: u16,
+    csum_offset: u16,
+    num_buffers: u16,
+}
 
 /// Global driver state
 static mut VIRTIO_PCI_BAR: usize = 0;
 static MAC_ADDRESS: Mutex<[u8; 6]> = Mutex::new([0x52, 0x54, 0x00, 0x12, 0x34, 0x56]); // Default QEMU MAC
 static INITIALIZED: Mutex<bool> = Mutex::new(false);
+static mut RX_BUFFER: [u8; MAX_PACKET_SIZE] = [0; MAX_PACKET_SIZE];
+static mut TX_BUFFER: [u8; MAX_PACKET_SIZE] = [0; MAX_PACKET_SIZE];
 
 /// Initialize virtio-net driver
 pub fn init() -> bool {
@@ -114,21 +132,55 @@ pub fn get_mac() -> [u8; 6] {
 }
 
 /// Send a frame
-pub fn send_frame(_dst_mac: [u8; 6], _ethertype: u16, _payload: &[u8]) -> bool {
+pub fn send_frame(dst_mac: [u8; 6], ethertype: u16, payload: &[u8]) -> bool {
     if !*INITIALIZED.lock() {
         return false;
     }
-    // TODO: Implement actual frame sending via virtqueue
-    log::debug!("virtio-net: send frame (stub)");
+
+    if payload.len() + 14 > MAX_PACKET_SIZE {
+        log::warn!("virtio-net: packet too large");
+        return false;
+    }
+
+    unsafe {
+        // Build Ethernet frame
+        let mut offset = 0;
+
+        // Destination MAC
+        TX_BUFFER[offset..offset + 6].copy_from_slice(&dst_mac);
+        offset += 6;
+
+        // Source MAC
+        TX_BUFFER[offset..offset + 6].copy_from_slice(&*MAC_ADDRESS.lock());
+        offset += 6;
+
+        // Ethertype
+        TX_BUFFER[offset] = (ethertype >> 8) as u8;
+        TX_BUFFER[offset + 1] = ethertype as u8;
+        offset += 2;
+
+        // Payload
+        TX_BUFFER[offset..offset + payload.len()].copy_from_slice(payload);
+        offset += payload.len();
+
+        log::debug!("virtio-net: send {} bytes to {:02x?}:{:02x?}:{:02x?}:{:02x?}:{:02x?}:{:02x?}",
+            offset, dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5]);
+
+        // TODO: Actually send via virtqueue
+        // For now, just log
+    }
+
     true
 }
 
 /// Receive a frame
-pub fn recv_frame(_buf: &mut [u8]) -> usize {
+pub fn recv_frame(buf: &mut [u8]) -> usize {
     if !*INITIALIZED.lock() {
         return 0;
     }
+
     // TODO: Implement actual frame receiving via virtqueue
+    // For now, return 0 (no data)
     0
 }
 

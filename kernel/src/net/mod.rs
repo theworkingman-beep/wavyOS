@@ -120,10 +120,9 @@ fn handle_ipv4(data: &[u8]) {
 
 /// Send an ARP request
 pub fn arp_request(target_ip: [u8; 4]) {
-    let mut payload = [0u8; 28]; // ARP packet size
+    log::debug!("net: ARP request for {}.{}.{}.{}", target_ip[0], target_ip[1], target_ip[2], target_ip[3]);
     // Build ARP request packet
     // This is simplified - just log for now
-    log::debug!("net: ARP request for {}.{}.{}.{}", target_ip[0], target_ip[1], target_ip[2], target_ip[3]);
 }
 
 /// Get local IP address
@@ -134,4 +133,22 @@ pub fn get_local_ip() -> [u8; 4] {
 /// Get local MAC address
 pub fn get_local_mac() -> [u8; 6] {
     *LOCAL_MAC.lock()
+}
+
+/// Simple checksum calculation for IP headers
+pub fn checksum(data: &[u8]) -> u16 {
+    let mut sum: u32 = 0;
+    let mut i = 0;
+    while i < data.len() {
+        if i + 1 < data.len() {
+            sum += ((data[i] as u32) << 8) | (data[i + 1] as u32);
+        } else {
+            sum += (data[i] as u32) << 8;
+        }
+        i += 2;
+    }
+    while sum >> 16 != 0 {
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    }
+    !sum as u16
 }
