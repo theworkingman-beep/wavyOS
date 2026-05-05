@@ -171,6 +171,21 @@ pub struct ExitStatus {
     pub code: i32,
 }
 
+/// Task structure
+#[derive(Clone)]
+pub struct Task {
+    pub id: usize,
+    pub stack: *mut u8,
+    pub context: Context,
+    pub entry: usize,
+    pub state: TaskState,
+    pub task_type: TaskType,
+    #[cfg(target_arch = "x86_64")]
+    pub page_tables: Option<crate::arch::x86_64::TaskPageTables>,
+    #[cfg(target_arch = "aarch64")]
+    pub page_tables: Option<crate::arch::aarch64::TaskPageTables>,
+}
+
 /// Process table entry
 pub struct Process {
     pub pid: usize,
@@ -288,31 +303,40 @@ pub fn fork() -> usize {
 /// Exit current process with given status code
 pub fn exit(code: i32) -> ! {
     let pid = current_task_id();
-    let mut procs = PROCESSES.lock();
+    let (waiters, children) = {
+        let mut procs = PROCESSES.lock();
+        let mut waiters = Vec::new();
+        let mut children = Vec::new();
 
-    if let Some(idx) = procs.iter().position(|p| p.pid == pid) {
-        procs[idx].task.state = TaskState::Dead;
-        procs[idx].exit_status = Some(ExitStatus { code });
+        if let Some(idx) = procs.iter().position(|p| p.pid == pid) {
+            procs[idx].task.state = TaskState::Dead;
+            procs[idx].exit_status = Some(ExitStatus { code });
 
-        // Notify waiters
-        let waiters = core::mem::take(&mut procs[idx].waiters);
-        for wpid in waiters {
-            if let Some(waiter) = procs.iter_mut().find(|p| p.pid == wpid) {
-                if waiter.task.state == TaskState::Dead {
-                    waiter.task.state = TaskState::Ready;
-                }
-            }
+            // Collect waiters
+            core::mem::swap(&mut waiters, &mut procs[idx].waiters);
+            // Collect children
+            core::mem::swap(&mut children, &mut procs[idx].children);
         }
+        (waiters, children)
+    };
 
-        // Reparent children to PID 1 (init) — for now just clear parent
-        let children = core::mem::take(&mut procs[idx].children);
-        for child_pid in children {
-            if let Some(child) = procs.iter_mut().find(|p| p.pid == child_pid) {
-                child.parent = None;
+    // Notify waiters (outside the lock to avoid borowing issues)
+    for wpid in waiters {
+        let mut procs = PROCESSES.lock();
+        if let Some(waiter) = procs.iter_mut().find(|p| p.pid == wpid) {
+            if waiter.task.state == TaskState::Dead {
+                waiter.task.state = TaskState::Ready;
             }
         }
     }
-    drop(procs);
+
+    // Reparent children
+    for child_pid in children {
+        let mut procs = PROCESSES.lock();
+        if let Some(child) = procs.iter_mut().find(|p| p.pid == child_pid) {
+            child.parent = None;
+        }
+    }
 
     // Switch to next task (we're dying)
     unsafe {
@@ -328,39 +352,53 @@ pub fn exit(code: i32) -> ! {
 pub fn wait(pid: isize) -> (usize, i32) {
     let cur_pid = current_task_id();
     loop {
-        let mut procs = PROCESSES.lock();
-        let mut found = None;
-        for (idx, proc) in procs.iter().enumerate() {
-            if proc.parent == Some(cur_pid) {
-                if pid < 0 || proc.pid == pid as usize {
-                    if let Some(status) = proc.exit_status {
-                        // Remove the dead child
-                        proc.children.clear();
-                        procs.remove(idx);
-                        return (proc.pid, status.code);
+        // Check if child exists and has exited
+        let (found_pid, exit_info) = {
+            let procs = PROCESSES.lock();
+            let mut found = None;
+            for proc in procs.iter() {
+                if proc.parent == Some(cur_pid) {
+                    if pid < 0 || proc.pid == pid as usize {
+                        if let Some(status) = proc.exit_status {
+                            found = Some((proc.pid, status.code));
+                        } else {
+                            found = Some((proc.pid, -1)); // Not exited yet
+                        }
+                        break;
                     }
-                    found = Some(proc.pid);
-                    break;
                 }
             }
+            match found {
+                Some((pid, -1)) => (Some(pid), None), // Not exited
+                Some((pid, code)) => (Some(pid), Some((pid, code))),
+                None => return (0, 0), // No child
+            }
+        };
+
+        if let Some((child_pid, code)) = exit_info {
+            // Child exited — remove from table
+            let mut procs = PROCESSES.lock();
+            if let Some(idx) = procs.iter().position(|p| p.pid == child_pid) {
+                procs.remove(idx);
+            }
+            return (child_pid, code);
         }
 
-        if found.is_some() {
-            // Child hasn't exited yet — add current task as waiter and sleep
-            if let Some(parent) = procs.iter_mut().find(|p| p.pid == found.unwrap()) {
-                parent.waiters.push(cur_pid);
+        // Child hasn't exited yet — register as waiter and sleep
+        {
+            let mut procs = PROCESSES.lock();
+            if let Some(child) = procs.iter_mut().find(|p| p.pid == found_pid.unwrap()) {
+                child.waiters.push(cur_pid);
             }
-            drop(procs);
-            // Mark self as dead (sleeping) and yield
+        }
+        // Mark self as dead (sleeping) and yield
+        {
             let mut procs = PROCESSES.lock();
             if let Some(self_proc) = procs.iter_mut().find(|p| p.pid == cur_pid) {
                 self_proc.task.state = TaskState::Dead;
             }
-            drop(procs);
-            yield_cpu();
-        } else {
-            return (0, 0); // No child found
         }
+        yield_cpu();
     }
 }
 
