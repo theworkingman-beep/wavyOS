@@ -121,8 +121,6 @@ fn handle_ipv4(data: &[u8]) {
 /// Send an ARP request
 pub fn arp_request(target_ip: [u8; 4]) {
     log::debug!("net: ARP request for {}.{}.{}.{}", target_ip[0], target_ip[1], target_ip[2], target_ip[3]);
-    // Build ARP request packet
-    // This is simplified - just log for now
 }
 
 /// Get local IP address
