@@ -31,3 +31,22 @@ syscall_entry:
     pop rbp
     # RCX still has user RIP, R11 still has user RFLAGS (saved by syscall instruction)
     sysretq
+
+# Enter user mode from kernel mode (noreturn, used by exec)
+# Arguments: RDI = entry point, RSI = user stack top, RDX = PML4 physical
+.global enter_user_mode_x86_64
+enter_user_mode_x86_64:
+    # Remove return address (we're not coming back)
+    pop rax
+
+    # Switch to user page tables
+    mov cr3, rdx
+
+    # Set up iretq frame
+    push 0x23        # SS (user data segment)
+    push rsi         # RSP (user stack)
+    push 0x202       # RFLAGS (interrupts enabled)
+    push 0x1B        # CS (user code segment)
+    push rdi         # RIP (entry point)
+
+    iretq

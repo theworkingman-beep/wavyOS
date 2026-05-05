@@ -13,11 +13,12 @@ pub enum Syscall {
     Yield = 4,
     Fork = 5,
     Wait = 6,
-    IpcSend = 7,
-    IpcRecv = 8,
-    ShmCreate = 9,
-    ShmMap = 10,
-    FramebufferMap = 11,
+    Exec = 7,
+    IpcSend = 8,
+    IpcRecv = 9,
+    ShmCreate = 10,
+    ShmMap = 11,
+    FramebufferMap = 12,
     MachOExec = 0x700,
 }
 
@@ -120,11 +121,15 @@ pub unsafe fn dispatch(n: usize, a1: usize, a2: usize, a3: usize, a4: usize, _a5
             ((ret_pid as usize) << 32) | (status as usize & 0xFFFFFFFF)
         }
         7 => {
+            // exec(path_ptr, len) — load and execute ELF binary
+            crate::userland::loader::exec(a1 as *const u8, a2 as usize)
+        }
+        8 => {
             // ipc_send(target_pid, msg_ptr, msg_size)
             log::warn!("syscall: ipc_send not fully implemented");
             0
         }
-        8 => {
+        9 => {
             // ipc_recv(msg_ptr, msg_size) — receive IPC message
             log::warn!("syscall: ipc_recv not fully implemented");
             0

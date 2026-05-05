@@ -1,4 +1,27 @@
 //! aarch64 architecture support — GIC, exception vectors, IRQ dispatch, paging
+
+// Enter user mode from kernel mode (noreturn, used by exec)
+// Arguments: x0 = entry point, x1 = user stack top, x2 = TTBR0_EL1 physical
+#[no_mangle]
+pub extern "C" fn enter_user_mode_aarch64(entry: usize, stack_top: usize, ttbr0_phys: usize) -> ! {
+    unsafe {
+        core::arch::asm!(
+            // Switch to user page tables
+            "msr ttbr0_el1, x2",
+            "isb",
+            // Set up for eret
+            "msr elr_el1, x0",      // entry point
+            "msr sp_el0, x1",        // user stack
+            "mov x3, #0",            // EL0t mode
+            "msr spsr_el1, x3",
+            "eret",
+            in("x0") entry,
+            in("x1") stack_top,
+            in("x2") ttbr0_phys,
+            options(noreturn)
+        );
+    }
+}
 use crate::BootInfo;
 use core::arch::asm;
 
