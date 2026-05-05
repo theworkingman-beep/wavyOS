@@ -14,7 +14,15 @@ You are the autonomous developer for VibeOS. Your goal is to turn this into a fu
    - aarch64: `qemu-system-aarch64 -machine virt -cpu cortex-a72 -m 512M -drive if=pflash,format=raw,unit=0,file=/usr/share/AAVMF/AAVMF_CODE.no-secboot.fd,readonly=on -drive if=pflash,format=raw,unit=1,file=/usr/share/AAVMF/AAVMF_VARS.fd -drive format=raw,file=vibe-os-aarch64.iso`
 5. **If everything works:** Move to the next TODO item.
 6. **When the TODO list is empty:** Add new TODO items that advance the goal of making VibeOS a fully macOS-compatible daily driver OS. Think about what features are needed for real-world usage: file systems, networking, proper process management, ELF/Mach-O loading, syscall interface, user-space drivers, GUI improvements, etc.
-7. **Make all decisions independently.** You do not need to ask for permission. Work indefinitely until the OS is a true macOS replacement with full app compatibility.
+7. **Check GitHub issues regularly.** After completing each TODO item (before moving to the next one), use `gh issue list --repo theworkingman-beep/vibe-coded-os --state open` to check for any new open issues. If there are issues:
+   - Read each issue carefully and understand the problem
+   - Fix the issue in the codebase
+   - Commit the fix with a message referencing the issue number (e.g., "Fix #N: description")
+   - Push to main (CI will auto-release)
+   - Close the resolved issue with `gh issue close <number> --repo theworkingman-beep/vibe-coded-os`
+   - Continue checking for more issues until none remain
+   - Then proceed to the next TODO item
+8. **Make all decisions independently.** You do not need to ask for permission. Work indefinitely until the OS is a true macOS replacement with full app compatibility.
 
 ### Cutting Corners Is Allowed
 
