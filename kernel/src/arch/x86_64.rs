@@ -559,6 +559,24 @@ pub fn init(_boot_info: &mut BootInfo) {
 
         // Enable interrupts
         core::arch::asm!("sti");
+
+        // Set up syscall entry (LSTAR MSR = 0xC0000082)
+        // Ring 3 → ring 0 via syscall instruction
+        // STAR MSR (0xC0000081): SYSRET CS/SS (bits 47:32 = ring 3 CS+16, bits 31:16 = ring 3 SS+16)
+        // For ring 3: CS = 0x1B (0x18 | 3), SS = 0x23 (0x20 | 3)
+        // STAR[47:32] = 0x1B, STAR[31:16] = 0x23
+        // We set STAR to (0x2300000000u64 | 0x1B000000000000u64) but use kernel CS/SS for return
+        // ECX = return RIP, R11 = return RFLAGS after SYSRET
+        let star_val: u64 = (0x1B_u64 << 48) | (0x08_u64 << 32); // ring3 CS=0x1B, kernel CS=0x08
+        core::arch::asm!("wrmsr", in("ecx") 0xC0000081_u32, in("eax") (star_val & 0xFFFF_FFFF) as u32, in("edx") (star_val >> 32) as u32);
+
+        // LSTAR = syscall entry point (kernel RIP)
+        extern "C" { fn syscall_entry(); }
+        let lstar_val = syscall_entry as u64;
+        core::arch::asm!("wrmsr", in("ecx") 0xC0000082_u32, in("eax") (lstar_val & 0xFFFF_FFFF) as u32, in("edx") (lstar_val >> 32) as u32);
+
+        // FMASK = clear IF (disable interrupts on syscall entry) — we want them enabled, so 0
+        core::arch::asm!("wrmsr", in("ecx") 0xC0000084_u32, in("eax") 0_u32, in("edx") 0_u32);
     }
 }
 
