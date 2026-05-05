@@ -11,6 +11,11 @@ global_asm!(
     include_str!("arch/vector_table_aarch64.s"),
 );
 
+#[cfg(target_arch = "x86_64")]
+global_asm!(
+    include_str!("arch/syscall_x86_64.s"),
+);
+
 extern crate alloc;
 
 use core::panic::PanicInfo;
