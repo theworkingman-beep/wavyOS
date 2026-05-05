@@ -1,4 +1,4 @@
-//! Cooperative round-robin scheduler with context switching
+//! Cooperative round-robin scheduler with context switching and per-task page tables
 use alloc::collections::vec_deque::VecDeque;
 use spin::Mutex;
 
@@ -20,12 +20,24 @@ static TASKS: Mutex<VecDeque<Task>> = Mutex::new(VecDeque::new());
 static CURRENT_TASK: Mutex<Option<usize>> = Mutex::new(None);
 static TASK_COUNTER: Mutex<usize> = Mutex::new(0);
 
+/// Task type: kernel or user-space
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TaskType {
+    Kernel,
+    User,
+}
+
 pub struct Task {
     pub id: usize,
     pub stack: *mut u8,
     pub context: Context,
     pub entry: usize,
     pub state: TaskState,
+    pub task_type: TaskType,
+    #[cfg(target_arch = "x86_64")]
+    pub page_tables: Option<crate::arch::x86_64::TaskPageTables>,
+    #[cfg(target_arch = "aarch64")]
+    pub page_tables: Option<crate::arch::aarch64::TaskPageTables>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,6 +61,41 @@ impl Task {
             context: Context { rsp: 0 },
             entry,
             state: TaskState::Ready,
+            task_type: TaskType::Kernel,
+            page_tables: None,
+        }
+    }
+
+    /// Create a user-space task
+    pub fn new_user(id: usize, entry: usize) -> Self {
+        let mut task = Self::new(id, entry);
+        task.task_type = TaskType::User;
+
+        // Set up per-task page tables
+        #[cfg(target_arch = "x86_64")]
+        {
+            let (k_phys, k_virt) = crate::arch::x86_64::kernel_page_tables();
+            task.page_tables = Some(crate::arch::x86_64::create_task_page_tables(k_phys, k_virt));
+        }
+        #[cfg(target_arch = "aarch64")]
+        {
+            let (k_phys, k_virt) = crate::arch::aarch64::kernel_page_tables();
+            task.page_tables = Some(crate::arch::aarch64::create_task_page_tables(k_phys, k_virt));
+        }
+
+        task
+    }
+
+    /// Map a user-space page in this task's page tables
+    pub fn map_user_page(&mut self, vaddr: u64, writable: bool) -> Option<usize> {
+        let pt = self.page_tables.as_mut()?;
+        #[cfg(target_arch = "x86_64")]
+        {
+            crate::arch::x86_64::map_user_page(pt, vaddr, writable)
+        }
+        #[cfg(target_arch = "aarch64")]
+        {
+            crate::arch::aarch64::map_user_page(pt, vaddr, writable)
         }
     }
 
@@ -85,6 +132,39 @@ impl Task {
         }
         self.context.rsp = sp;
     }
+
+    /// Get the page table root for this task (for context switching)
+    #[cfg(target_arch = "x86_64")]
+    pub fn page_table_root(&self) -> usize {
+        match self.task_type {
+            TaskType::Kernel => {
+                let (phys, _) = crate::arch::x86_64::kernel_page_tables();
+                phys
+            }
+            TaskType::User => {
+                self.page_tables.map(|pt| pt.pml4_phys).unwrap_or_else(|| {
+                    let (phys, _) = crate::arch::x86_64::kernel_page_tables();
+                    phys
+                })
+            }
+        }
+    }
+
+    #[cfg(target_arch = "aarch64")]
+    pub fn page_table_root(&self) -> usize {
+        match self.task_type {
+            TaskType::Kernel => {
+                let (phys, _) = crate::arch::aarch64::kernel_page_tables();
+                phys
+            }
+            TaskType::User => {
+                self.page_tables.map(|pt| pt.ttbr0_phys).unwrap_or_else(|| {
+                    let (phys, _) = crate::arch::aarch64::kernel_page_tables();
+                    phys
+                })
+            }
+        }
+    }
 }
 
 pub fn init() {
@@ -98,6 +178,19 @@ pub fn spawn(entry: extern "C" fn() -> !) -> usize {
     drop(counter);
 
     let mut task = Task::new(id, entry as usize);
+    task.init_context();
+    TASKS.lock().push_back(task);
+    id
+}
+
+/// Spawn a user-space task with its own page tables
+pub fn spawn_user(entry: usize) -> usize {
+    let mut counter = TASK_COUNTER.lock();
+    let id = *counter;
+    *counter += 1;
+    drop(counter);
+
+    let mut task = Task::new_user(id, entry);
     task.init_context();
     TASKS.lock().push_back(task);
     id
@@ -119,6 +212,7 @@ pub fn yield_cpu() {
 unsafe fn do_switch_task() {
     let next_rsp: usize;
     let old_rsp_ptr: *mut usize;
+    let next_pt_root: usize;
 
     // Determine next task and get its stack pointer
     {
@@ -161,9 +255,13 @@ unsafe fn do_switch_task() {
         }
 
         next_rsp = tasks[next_idx].context.rsp;
+        next_pt_root = tasks[next_idx].page_table_root();
         tasks[next_idx].state = TaskState::Running;
         *CURRENT_TASK.lock() = Some(tasks[next_idx].id);
     }
+
+    // Switch page tables
+    crate::arch::x86_64::load_page_tables(next_pt_root);
 
     // Do the actual context switch in assembly
     switch_context(old_rsp_ptr, next_rsp);
@@ -209,6 +307,7 @@ extern "C" {
 unsafe fn do_switch_task() {
     let next_sp: usize;
     let old_sp_ptr: *mut usize;
+    let next_pt_root: usize;
 
     {
         let mut tasks = TASKS.lock();
@@ -248,9 +347,13 @@ unsafe fn do_switch_task() {
         }
 
         next_sp = tasks[next_idx].context.rsp;
+        next_pt_root = tasks[next_idx].page_table_root();
         tasks[next_idx].state = TaskState::Running;
         *CURRENT_TASK.lock() = Some(tasks[next_idx].id);
     }
+
+    // Switch page tables
+    crate::arch::aarch64::load_page_tables(next_pt_root);
 
     switch_context(old_sp_ptr, next_sp);
 }
@@ -300,11 +403,18 @@ pub fn run_scheduler() -> ! {
     // Start the first task
     let first_id = tasks[0].id;
     let first_rsp = tasks[0].context.rsp;
+    let first_pt_root = tasks[0].page_table_root();
     tasks[0].state = TaskState::Running;
     *CURRENT_TASK.lock() = Some(first_id);
     drop(tasks);
 
     unsafe {
+        // Load page tables for first task
+        #[cfg(target_arch = "x86_64")]
+        crate::arch::x86_64::load_page_tables(first_pt_root);
+        #[cfg(target_arch = "aarch64")]
+        crate::arch::aarch64::load_page_tables(first_pt_root);
+
         switch_context(core::ptr::null_mut(), first_rsp);
     }
 
