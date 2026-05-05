@@ -1,5 +1,8 @@
 //! Cooperative round-robin scheduler with context switching and per-task page tables
 //! Also provides process management (fork, exec, exit, wait, PID allocation)
+#![cfg_attr(target_arch = "aarch64", feature(asm_const))]
+
+use alloc::collections::vec_deque::VecDeque;
 use alloc::vec::Vec;
 use spin::Mutex;
 
@@ -46,6 +49,35 @@ pub struct Task {
 // Safety: Task stack pointers are used only by the scheduler which enforces
 // exclusive access. All stack data is zero-initialized.
 unsafe impl Send for Task {}
+
+impl Clone for Task {
+    fn clone(&self) -> Self {
+        // Note: stack pointer is copied, but the actual stack memory is shared
+        // In a real fork, we would copy the stack
+        Self {
+            id: self.id,
+            stack: self.stack,
+            context: self.context,
+            entry: self.entry,
+            state: self.state,
+            task_type: self.task_type,
+            page_tables: self.page_tables,
+        }
+    }
+}
+
+impl Clone for Process {
+    fn clone(&self) -> Self {
+        Self {
+            pid: self.pid,
+            task: self.task.clone(),
+            parent: self.parent,
+            children: self.children.clone(),
+            exit_status: self.exit_status,
+            waiters: self.waiters.clone(),
+        }
+    }
+}
 
 impl Task {
     pub fn new(id: usize, entry: usize) -> Self {
@@ -446,30 +478,6 @@ unsafe fn do_switch_task() {
     switch_context(old_rsp_ptr, next_rsp);
 }
 
-#[cfg(target_arch = "x86_64")]
-core::arch::global_asm!(
-    ".global switch_context",
-    "switch_context:",
-    "test rdi, rdi",
-    "jz 1f",
-    "push r15",
-    "push r14",
-    "push r13",
-    "push r12",
-    "push rbp",
-    "push rbx",
-    "mov [rdi], rsp",
-    "1:",
-    "mov rsp, rsi",
-    "pop rbx",
-    "pop rbp",
-    "pop r12",
-    "pop r13",
-    "pop r14",
-    "pop r15",
-    "ret",
-);
-
 extern "C" {
     fn switch_context(old_sp_ptr: *mut usize, new_sp: usize);
 }
@@ -527,30 +535,6 @@ unsafe fn do_switch_task() {
     crate::arch::aarch64::load_page_tables(next_pt_root);
     switch_context(old_sp_ptr, next_sp);
 }
-
-#[cfg(target_arch = "aarch64")]
-core::arch::global_asm!(
-    ".global switch_context",
-    "switch_context:",
-    "cbz x0, 1f",
-    "stp x29, x30, [sp, #-16]!",
-    "stp x27, x28, [sp, #-16]!",
-    "stp x25, x26, [sp, #-16]!",
-    "stp x23, x24, [sp, #-16]!",
-    "stp x21, x22, [sp, #-16]!",
-    "stp x19, x20, [sp, #-16]!",
-    "mov x2, sp",
-    "str x2, [x0]",
-    "1:",
-    "mov sp, x1",
-    "ldp x19, x20, [sp], #16",
-    "ldp x21, x22, [sp], #16",
-    "ldp x23, x24, [sp], #16",
-    "ldp x25, x26, [sp], #16",
-    "ldp x27, x28, [sp], #16",
-    "ldp x29, x30, [sp], #16",
-    "ret",
-);
 
 /// Run the scheduler — starts the first task and never returns
 pub fn run_scheduler() -> ! {

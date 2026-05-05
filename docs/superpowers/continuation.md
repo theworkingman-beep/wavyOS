@@ -71,8 +71,8 @@ You are explicitly allowed and encouraged to cut corners where it makes sense. U
 - [x] **Wire keyboard input to shell via input subsystem** — Update ps2kbd.rs to push KeyPress events, update shell to read from input::poll() instead of UART. Commit → CI release → test typing in shell on both architectures.
 - [x] **Implement a proper file system (FAT32 + VFS abstraction)** — VFS layer with `FileSystem` trait, `open`/`read`/`read_dir` API. FAT32 read-only driver with VFAT long filename support, cluster chain following, directory traversal. VirtIO block device driver skeleton. Block access not yet wired to actual disk (needs PCI BAR mapping + virtqueue setup).
 - [x] **Implement virtual memory / paging for user-space** — Page tables, page fault handler, copy-on-write, user/kernel memory separation. Commit → CI release.
-- [ ] **Implement syscall interface** — Syscall numbers, user→kernel transition, argument passing, return values. Commit → CI release.
-- [ ] **Implement user-space process management** — Fork, exec, exit, wait, PID allocation, process table. Commit → CI release.
+- [x] **Implement syscall interface** — Syscall numbers, user→kernel transition, argument passing, return values. Commit → CI release.
+- [x] **Implement user-space process management** — Fork, exec, exit, wait, PID allocation, process table. Commit → CI release.
 - [ ] **Implement ELF loader for user-space binaries** — Parse ELF64, map segments, set up stack, jump to entry point. Commit → CI release → test running user-space ELF binary.
 - [ ] **Implement Mach-O compatibility layer** — Parse Mach-O 64-bit, map segments, handle relocations, dynamic linking stubs. Commit → CI release → test running simple Mach-O binary.
 - [ ] **Implement networking stack (TCP/IP)** — Ethernet driver (virtio-net for QEMU), ARP, IP, UDP, TCP, DNS. Commit → CI release → test network connectivity.

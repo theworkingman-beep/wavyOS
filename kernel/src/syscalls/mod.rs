@@ -1,20 +1,10 @@
-//! Syscall dispatch table with full implementation
-
+//! Syscall dispatch — real implementation
 use core::ptr;
+use core::slice;
 
-pub fn init() {
-    log::info!("syscalls: initialized");
-}
-
-/// C-compatible entry point called from x86_64 syscall assembly
-#[no_mangle]
-pub unsafe extern "C" fn syscall_dispatch(
-    n: usize, a1: usize, a2: usize, a3: usize, a4: usize, a5: usize, a6: usize,
-) -> usize {
-    dispatch(n, a1, a2, a3, a4, a5, a6)
-}
-
+/// Syscall numbers (matches user-space ABI)
 #[repr(usize)]
+#[derive(Clone, Copy, Debug)]
 pub enum Syscall {
     Exit = 0,
     Write = 1,
@@ -31,64 +21,88 @@ pub enum Syscall {
     MachOExec = 0x700,
 }
 
+/// C-compatible entry point called from x86_64 syscall assembly
+#[no_mangle]
+pub unsafe extern "C" fn syscall_dispatch(
+    n: usize, a1: usize, a2: usize, a3: usize, a4: usize, a5: usize, a6: usize,
+) -> usize {
+    dispatch(n, a1, a2, a3, a4, a5, a6)
+}
+
+/// Copy bytes from user-space address to kernel buffer.
+/// Returns number of bytes successfully copied.
+pub unsafe fn copy_from_user(kbuf: &mut [u8], user_ptr: usize) -> usize {
+    let user_slice = slice::from_raw_parts(user_ptr as *const u8, kbuf.len());
+    kbuf.copy_from_slice(user_slice);
+    kbuf.len()
+}
+
+/// Copy bytes from kernel buffer to user-space address.
+/// Returns number of bytes successfully copied.
+pub unsafe fn copy_to_user(user_ptr: usize, kbuf: &[u8]) -> usize {
+    let user_slice = slice::from_raw_parts_mut(user_ptr as *mut u8, kbuf.len());
+    user_slice.copy_from_slice(kbuf);
+    kbuf.len()
+}
+
+/// Write to UART from user buffer
+unsafe fn sys_write(fd: usize, user_buf: usize, count: usize) -> usize {
+    if fd != 1 || user_buf == 0 || count == 0 {
+        return 0;
+    }
+    let count = count.min(4096);
+    let mut kbuf = [0u8; 4096];
+    let to_copy = count.min(kbuf.len());
+    copy_from_user(&mut kbuf[..to_copy], user_buf);
+    for &b in &kbuf[..to_copy] {
+        crate::drivers::uart::putc(b);
+    }
+    to_copy
+}
+
+/// Read from input buffer into user buffer
+unsafe fn sys_read(_fd: usize, user_buf: usize, count: usize) -> usize {
+    if user_buf == 0 || count == 0 {
+        return 0;
+    }
+    let mut kbuf = [0u8; 256];
+    let to_read = count.min(kbuf.len());
+    let mut n = 0usize;
+    use crate::input::{self, InputEvent};
+    while n < to_read {
+        match input::poll() {
+            Some(InputEvent::KeyPress { ascii }) => {
+                kbuf[n] = ascii;
+                n += 1;
+            }
+            _ => break,
+        }
+    }
+    if n > 0 {
+        copy_to_user(user_buf, &kbuf[..n]);
+    }
+    n
+}
+
 /// Full dispatch with up to 6 arguments
-pub unsafe fn dispatch(n: usize, a1: usize, a2: usize, a3: usize, a4: usize, a5: usize, a6: usize) -> usize {
+pub unsafe fn dispatch(n: usize, a1: usize, a2: usize, a3: usize, a4: usize, _a5: usize, _a6: usize) -> usize {
     match n {
         0 => {
-            // exit(code) — terminate current task
+            // exit(code) — terminate current process
             let code = a1 as i32;
-            log::info!("syscall: exit({})", code);
             crate::scheduler::exit(code);
         }
         1 => {
-            // write(fd, buf, count) — write to UART for fd 1/2, return bytes written
-            let fd = a1;
-            let buf = a2 as *const u8;
-            let count = a3;
-            if count == 0 { return 0; }
-            match fd {
-                1 | 2 => {
-                    // stdout/stderr — write to UART
-                    let mut written = 0;
-                    for i in 0..count {
-                        let byte = ptr::read(buf.add(i));
-                        if byte == 0 { break; }
-                        crate::drivers::uart::putc(byte);
-                        written += 1;
-                    }
-                    written
-                }
-                _ => {
-                    log::warn!("syscall: write to unsupported fd {}", fd);
-                    0
-                }
-            }
+            // write(fd, buf, count)
+            sys_write(a1, a2, a3)
         }
         2 => {
-            // read(fd, buf, count) — read from input ring buffer for fd 0
-            let fd = a1;
-            let buf = a2 as *mut u8;
-            let count = a3;
-            if fd != 0 {
-                log::warn!("syscall: read from unsupported fd {}", fd);
-                return 0;
-            }
-            // Read from input subsystem
-            let mut bytes_read = 0;
-            for _ in 0..count {
-                if let Some(key) = crate::input::try_recv_key() {
-                    ptr::write(buf.add(bytes_read), key as u8);
-                    bytes_read += 1;
-                } else {
-                    break;
-                }
-            }
-            bytes_read
+            // read(fd, buf, count)
+            sys_read(a1, a2, a3)
         }
         3 => {
             // spawn(entry_point) — spawn a new user task, returns PID
-            let pid = crate::scheduler::spawn_user(a1);
-            pid
+            crate::scheduler::spawn_user(a1)
         }
         4 => {
             // yield — yield CPU to next task
@@ -97,19 +111,16 @@ pub unsafe fn dispatch(n: usize, a1: usize, a2: usize, a3: usize, a4: usize, a5:
         }
         5 => {
             // fork — create child process, returns child PID to parent, 0 to child
-            let child_pid = crate::scheduler::fork();
-            child_pid
+            crate::scheduler::fork()
         }
         6 => {
             // wait(pid) — wait for child process, returns (pid, status)
             let pid = a1 as isize;
             let (ret_pid, status) = crate::scheduler::wait(pid);
-            // Pack pid into upper bits, status into lower 32 bits
             ((ret_pid as usize) << 32) | (status as usize & 0xFFFFFFFF)
         }
         7 => {
             // ipc_send(target_pid, msg_ptr, msg_size)
-            // Stub for now — need to implement IPC properly
             log::warn!("syscall: ipc_send not fully implemented");
             0
         }
@@ -127,7 +138,6 @@ pub unsafe fn dispatch(n: usize, a1: usize, a2: usize, a3: usize, a4: usize, a5:
         }
         10 => {
             // shm_map(id) — map shared memory region into address space
-            // For now, return the physical address
             match crate::shm::lookup(a1) {
                 Some((start, _size)) => start,
                 None => 0,
@@ -139,15 +149,12 @@ pub unsafe fn dispatch(n: usize, a1: usize, a2: usize, a3: usize, a4: usize, a5:
             if a1 != 0 {
                 let fb_info = crate::drivers::fbcon::get_info();
                 ptr::write(a1 as *mut crate::FramebufferInfo, fb_info);
-                return 0; // Success
+                return 0;
             }
             // If a1 is 0, return framebuffer physical address (for mmap)
             crate::drivers::fbcon::get_phys_addr()
         }
-        0x700 => {
-            // Mach-O exec
-            crate::compat::macho::exec(a1 as *const u8, a2 as usize)
-        }
+        0x700 => crate::compat::macho::exec(a1 as *const u8, a2 as usize),
         _ => {
             log::warn!("Unknown syscall: {}", n);
             0
@@ -155,7 +162,11 @@ pub unsafe fn dispatch(n: usize, a1: usize, a2: usize, a3: usize, a4: usize, a5:
     }
 }
 
-/// Wrapper for x86_64 syscall entry (fewer args)
+/// Wrapper for x86_64 syscall entry (fewer args — compatibility)
 pub unsafe fn dispatch_3(n: usize, a1: usize, a2: usize, a3: usize) -> usize {
     dispatch(n, a1, a2, a3, 0, 0, 0)
+}
+
+pub fn init() {
+    log::info!("syscalls: dispatch table initialized");
 }

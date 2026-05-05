@@ -11,8 +11,14 @@ global_asm!(
 );
 
 #[cfg(target_arch = "x86_64")]
-global_asm!(
+core::arch::global_asm!(
     include_str!("arch/syscall_x86_64.s"),
+    include_str!("arch/switch_x86_64.s"),
+);
+
+#[cfg(target_arch = "aarch64")]
+core::arch::global_asm!(
+    include_str!("arch/switch_aarch64.s"),
 );
 
 extern crate alloc;

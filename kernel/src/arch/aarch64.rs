@@ -414,13 +414,25 @@ pub extern "C" fn handle_sync_lower_el() {
         let esr: u64;
         let far: u64;
         let elr: u64;
+        let x8: u64;
+        let x0: u64;
+        let x1: u64;
+        let x2: u64;
         asm!(
             "mrs {0}, esr_el1",
             "mrs {1}, far_el1",
             "mrs {2}, elr_el1",
+            "mov {x8}, x8",
+            "mov {x0}, x0",
+            "mov {x1}, x1",
+            "mov {x2}, x2",
             out(reg) esr,
             out(reg) far,
             out(reg) elr,
+            x8 = out(reg) x8,
+            x0 = out(reg) x0,
+            x1 = out(reg) x1,
+            x2 = out(reg) x2,
             options(nostack),
         );
 
