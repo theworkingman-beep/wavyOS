@@ -13,9 +13,9 @@ const VIRTIO_VENDOR_ID: u16 = 0x1AF4;
 const VIRTIO_NET_DEVICE_ID_LEGACY: u16 = 0x1000;
 const VIRTIO_NET_DEVICE_ID_MODERN: u16 = 0x1041;
 
-/// Virtio-net header flags
-const VIRTIO_NET_HDR_F_NEEDS_CSUM: u16 = 1;
-const VIRTIO_NET_HDR_GSO_NONE: u8 = 0;
+/// Virtqueue indices
+const RX_QUEUE: u16 = 0;
+const TX_QUEUE: u16 = 1;
 
 /// Maximum packet size for Ethernet
 const MAX_PACKET_SIZE: usize = 1526; // Ethernet + possible VLAN tag
@@ -32,12 +32,50 @@ struct VirtioNetHdr {
     num_buffers: u16,
 }
 
+/// Virtqueue structure
+struct Virtqueue {
+    index: u16,
+    size: u16,
+    descriptors: *mut VirtqDesc,
+    avail: *mut VirtqAvail,
+    used: *mut VirtqUsed,
+    last_used_idx: u16,
+}
+
+#[repr(C)]
+struct VirtqDesc {
+    addr: u64,
+    len: u32,
+    flags: u16,
+    next: u16,
+}
+
+#[repr(C)]
+struct VirtqAvail {
+    flags: u16,
+    idx: u16,
+    ring: [u16; 256],
+    used_event: u16,
+}
+
+#[repr(C)]
+struct VirtqUsed {
+    flags: u16,
+    idx: u16,
+    ring: [VirtqUsedElem; 256],
+    avail_event: u16,
+}
+
+#[repr(C)]
+struct VirtqUsedElem {
+    id: u32,
+    len: u32,
+}
+
 /// Global driver state
 static mut VIRTIO_PCI_BAR: usize = 0;
 static MAC_ADDRESS: Mutex<[u8; 6]> = Mutex::new([0x52, 0x54, 0x00, 0x12, 0x34, 0x56]); // Default QEMU MAC
 static INITIALIZED: Mutex<bool> = Mutex::new(false);
-static mut RX_BUFFER: [u8; MAX_PACKET_SIZE] = [0; MAX_PACKET_SIZE];
-static mut TX_BUFFER: [u8; MAX_PACKET_SIZE] = [0; MAX_PACKET_SIZE];
 
 /// Initialize virtio-net driver
 pub fn init() -> bool {
@@ -82,7 +120,6 @@ pub fn init() -> bool {
         }
     } else {
         // For aarch64, we're on QEMU virt platform
-        // virtio-mmio devices are at fixed addresses
         log::info!("virtio-net: aarch64 support not yet implemented");
         return false;
     }
@@ -142,33 +179,32 @@ pub fn send_frame(dst_mac: [u8; 6], ethertype: u16, payload: &[u8]) -> bool {
         return false;
     }
 
-    unsafe {
-        // Build Ethernet frame
-        let mut offset = 0;
+    // Build Ethernet frame
+    let mut frame = [0u8; MAX_PACKET_SIZE];
+    let mut offset = 0;
 
-        // Destination MAC
-        TX_BUFFER[offset..offset + 6].copy_from_slice(&dst_mac);
-        offset += 6;
+    // Destination MAC
+    frame[offset..offset + 6].copy_from_slice(&dst_mac);
+    offset += 6;
 
-        // Source MAC
-        TX_BUFFER[offset..offset + 6].copy_from_slice(&*MAC_ADDRESS.lock());
-        offset += 6;
+    // Source MAC
+    frame[offset..offset + 6].copy_from_slice(&*MAC_ADDRESS.lock());
+    offset += 6;
 
-        // Ethertype
-        TX_BUFFER[offset] = (ethertype >> 8) as u8;
-        TX_BUFFER[offset + 1] = ethertype as u8;
-        offset += 2;
+    // Ethertype
+    frame[offset] = (ethertype >> 8) as u8;
+    frame[offset + 1] = ethertype as u8;
+    offset += 2;
 
-        // Payload
-        TX_BUFFER[offset..offset + payload.len()].copy_from_slice(payload);
-        offset += payload.len();
+    // Payload
+    frame[offset..offset + payload.len()].copy_from_slice(payload);
+    offset += payload.len();
 
-        log::debug!("virtio-net: send {} bytes to {:02x?}:{:02x?}:{:02x?}:{:02x?}:{:02x?}:{:02x?}",
-            offset, dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5]);
+    log::debug!("virtio-net: send {} bytes to {:02x?}:{:02x?}:{:02x?}:{:02x?}:{:02x?}:{:02x?}",
+        offset, dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5]);
 
-        // TODO: Actually send via virtqueue
-        // For now, just log
-    }
+    // TODO: Actually send via virtqueue
+    // For now, just log
 
     true
 }
