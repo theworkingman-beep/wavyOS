@@ -61,6 +61,41 @@ pub fn poll() -> Option<InputEvent> {
     INPUT_QUEUE.lock().poll()
 }
 
+/// Try to receive a key press (non-blocking, for read syscall)
+/// Returns Some(ascii) if a key was pressed, None otherwise
+pub fn try_recv_key() -> Option<u8> {
+    let mut queue = INPUT_QUEUE.lock();
+    // Peek at the next event
+    if queue.head == queue.tail {
+        return None;
+    }
+    // Look for a KeyPress event without consuming it yet
+    let mut idx = queue.tail;
+    while idx != queue.head {
+        if let Some(InputEvent::KeyPress { ascii }) = queue.buffer[idx] {
+            // Found a key press - consume it
+            let event = queue.buffer[idx].take();
+            // Shift remaining events down
+            let mut shift_from = (idx + 1) % INPUT_BUF_SIZE;
+            while shift_from != queue.head {
+                queue.buffer[idx] = queue.buffer[shift_from];
+                idx = shift_from;
+                shift_from = (shift_from + 1) % INPUT_BUF_SIZE;
+            }
+            queue.head = ((queue.head as isize - 1 + INPUT_BUF_SIZE as isize) as usize) % INPUT_BUF_SIZE;
+            return event.and_then(|e| {
+                if let InputEvent::KeyPress { ascii } = e {
+                    Some(ascii)
+                } else {
+                    None
+                }
+            });
+        }
+        idx = (idx + 1) % INPUT_BUF_SIZE;
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

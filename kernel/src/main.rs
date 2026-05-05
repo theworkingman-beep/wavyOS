@@ -3,7 +3,6 @@
 #![no_main]
 #![cfg_attr(target_arch = "x86_64", feature(abi_x86_interrupt))]
 
-#[cfg(target_arch = "aarch64")]
 use core::arch::global_asm;
 
 #[cfg(target_arch = "aarch64")]

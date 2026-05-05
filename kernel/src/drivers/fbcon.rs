@@ -50,6 +50,24 @@ pub fn get_framebuffer() -> FramebufferRef {
     }
 }
 
+/// Get the FramebufferInfo struct (for syscall)
+pub fn get_info() -> FramebufferInfo {
+    unsafe {
+        FramebufferInfo {
+            addr: FB_PTR as u64,
+            width: FB_W as u32,
+            height: FB_H as u32,
+            pitch: FB_PITCH as u32,
+            bpp: FB_BPP as u8,
+        }
+    }
+}
+
+/// Get the physical address of the framebuffer (for mmap)
+pub fn get_phys_addr() -> usize {
+    unsafe { FB_PTR as usize }
+}
+
 pub fn set_pixel(x: usize, y: usize, color: u32) {
     put_pixel(x, y, color);
 }

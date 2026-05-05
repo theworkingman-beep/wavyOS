@@ -15,7 +15,7 @@ syscall_entry:
     push rbp
     mov rbp, rsp
 
-    # Call the Rust dispatch function
+    # Call the Rust dispatch function (syscall_dispatch is #[no_mangle] in Rust)
     # Arguments: sysnum (RAX), a1 (RDI), a2 (RSI), a3 (RDX), a4 (R10), a5 (R8), a6 (R9)
     mov rdi, rax        # arg1: syscall number (RAX → RDI)
     # RSI already has a2
@@ -31,10 +31,3 @@ syscall_entry:
     pop rbp
     # RCX still has user RIP, R11 still has user RFLAGS (saved by syscall instruction)
     sysretq
-
-# Rust function: syscall_dispatch(sysnum, a1, a2, a3, a4, a5, a6) -> usize
-# This is implemented in Rust as: crate::syscalls::dispatch(sysnum, a1, a2, a3, a4, a5, a6)
-# We need to make it visible with #[no_mangle]
-.global syscall_dispatch
-syscall_dispatch:
-    jmp crate::syscalls::dispatch

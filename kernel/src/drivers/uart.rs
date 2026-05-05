@@ -56,7 +56,7 @@ pub fn init() {
     }
 }
 
-fn putc(c: u8) {
+pub fn putc(c: u8) {
     #[cfg(target_arch = "x86_64")]
     {
         while (inb(COM1_PORT + 5) & 0x20) == 0 {}

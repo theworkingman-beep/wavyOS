@@ -428,7 +428,32 @@ pub extern "C" fn handle_sync_lower_el() {
 
         if ec == 0x15 {
             // SVC instruction from EL0 — syscall
-            handle_syscall(elr, a1 as usize, a2 as usize, a3 as usize);
+            // Read syscall arguments from user registers (x8=sysnum, x0-x5=args)
+            let x8: u64;
+            let x0: u64;
+            let x1: u64;
+            let x2: u64;
+            let x3: u64;
+            let x4: u64;
+            let x5: u64;
+            asm!(
+                "mov {x8}, x8",
+                "mov {x0}, x0",
+                "mov {x1}, x1",
+                "mov {x2}, x2",
+                "mov {x3}, x3",
+                "mov {x4}, x4",
+                "mov {x5}, x5",
+                x8 = out(reg) x8,
+                x0 = out(reg) x0,
+                x1 = out(reg) x1,
+                x2 = out(reg) x2,
+                x3 = out(reg) x3,
+                x4 = out(reg) x4,
+                x5 = out(reg) x5,
+                options(nostack),
+            );
+            handle_syscall(elr, x8 as usize, x0 as usize, x1 as usize, x2 as usize, x3 as usize, x4 as usize, x5 as usize);
         } else if ec == 0x24 || ec == 0x20 {
             // Data Abort from lower EL
             let dfsc = esr & 0x3F;
@@ -491,26 +516,12 @@ pub extern "C" fn handle_sync_lower_el() {
 }
 
 /// Handle syscall from EL0
-unsafe fn handle_syscall(elr: u64, a1: usize, a2: usize, a3: usize) {
-    let x8: u64;
-    let x4: u64;
-    let x5: u64;
-    let x6: u64;
-    asm!(
-        "mov {x8}, x8",
-        "mov {x4}, x4",
-        "mov {x5}, x5",
-        "mov {x6}, x6",
-        x8 = out(reg) x8,
-        x4 = out(reg) x4,
-        x5 = out(reg) x5,
-        x6 = out(reg) x6,
-        options(nostack),
-    );
+/// Arguments: elr = exception link register (return address),
+/// sysnum = syscall number (in x8), a1-a6 = syscall arguments (in x0-x5)
+unsafe fn handle_syscall(elr: u64, sysnum: usize, a1: usize, a2: usize, a3: usize, a4: usize, a5: usize, a6: usize) {
+    let result = crate::syscalls::dispatch(sysnum, a1, a2, a3, a4, a5, a6);
 
-    let result = crate::syscalls::dispatch(x8 as usize, a1, a2, a3, x4 as usize, x5 as usize, x6 as usize);
-
-    // Set return value in x0 and advance past SVC
+    // Set return value in x0 and advance past SVC (SVC instruction is 4 bytes)
     asm!(
         "mov x0, {result}",
         "msr elr_el1, {elr}",

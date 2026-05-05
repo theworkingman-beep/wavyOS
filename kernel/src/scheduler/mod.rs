@@ -1,6 +1,5 @@
 //! Cooperative round-robin scheduler with context switching and per-task page tables
 //! Also provides process management (fork, exec, exit, wait, PID allocation)
-use alloc::collections::vec_deque::VecDeque;
 use alloc::vec::Vec;
 use spin::Mutex;
 
@@ -30,6 +29,7 @@ pub enum TaskState {
 }
 
 /// Task structure
+#[derive(Clone)]
 pub struct Task {
     pub id: usize,
     pub stack: *mut u8,
@@ -171,22 +171,8 @@ pub struct ExitStatus {
     pub code: i32,
 }
 
-/// Task structure
-#[derive(Clone)]
-pub struct Task {
-    pub id: usize,
-    pub stack: *mut u8,
-    pub context: Context,
-    pub entry: usize,
-    pub state: TaskState,
-    pub task_type: TaskType,
-    #[cfg(target_arch = "x86_64")]
-    pub page_tables: Option<crate::arch::x86_64::TaskPageTables>,
-    #[cfg(target_arch = "aarch64")]
-    pub page_tables: Option<crate::arch::aarch64::TaskPageTables>,
-}
-
 /// Process table entry
+#[derive(Clone)]
 pub struct Process {
     pub pid: usize,
     pub task: Task,
@@ -345,7 +331,10 @@ pub fn exit(code: i32) -> ! {
     yield_cpu();
 
     // Should not reach here
+    #[cfg(target_arch = "x86_64")]
     loop { unsafe { core::arch::asm!("hlt") } }
+    #[cfg(target_arch = "aarch64")]
+    loop { unsafe { core::arch::asm!("wfe") } }
 }
 
 /// Wait for a child process to exit
