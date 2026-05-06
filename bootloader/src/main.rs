@@ -319,13 +319,7 @@ fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
     unsafe { uart_putc(b'X'); }
 
     // Compute kernel entry point (virtual address)
-    let kernel_entry = if kernel_phys_base != 0 {
-        // On aarch64, entry is at virtual address 0x10000000 (where the kernel is linked)
-        // On x86_64, kernel_phys_base == 0x10000000 (allocated at linked address)
-        0x10000000u64
-    } else {
-        return Status::LOAD_ERROR;
-    };
+    let kernel_entry = kernel_entry_vaddr;
 
     #[cfg(target_arch = "x86_64")]
     unsafe {
@@ -340,14 +334,30 @@ fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
     }
     #[cfg(target_arch = "aarch64")]
     unsafe {
-        // Jump to kernel at identity-mapped address (0x40000000)
         core::arch::asm!(
+            "mrs x4, CurrentEL",
+            "lsr x4, x4, #2",
+            "cmp x4, #2",
+            "b.ne 2f",
+            // In EL2: configure for EL1
+            "mov x4, #0x80000000",
+            "msr hcr_el2, x4",
+            "ldr x4, =0x30d00800",
+            "msr sctlr_el1, x4",
+            "mov x4, #0x3c5",
+            "msr spsr_el2, x4",
+            "msr elr_el2, {entry}",
+            "mov x4, {stack}",
+            "msr sp_el1, x4",
+            "eret",
+            "2:",
             "mov x0, {bi}",
             "mov sp, {stack}",
             "br {entry}",
             entry = in(reg) kernel_entry_vaddr,
             bi = in(reg) bi_ptr,
             stack = in(reg) stack_top,
+            out("x4") _,
         );
     }
     unreachable!();

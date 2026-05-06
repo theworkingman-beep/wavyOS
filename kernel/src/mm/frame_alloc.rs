@@ -82,7 +82,7 @@ impl FrameAllocator {
     fn count_free(&self) -> usize {
         let mut free = 0;
         for word in self.bitmap.iter() {
-            free += word.count_ones() as usize;
+            free += word.count_zeros() as usize;
         }
         free
     }

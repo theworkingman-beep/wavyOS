@@ -195,8 +195,8 @@ pub fn setup_kernel_page_tables() -> (usize, *mut PageTable) {
     let l1 = unsafe { &mut *l1_virt };
     let l1_idx = ((KERNEL_VADDR >> 30) & 0x1FF) as usize;
 
-    // Map kernel with 1GB block (covers 0x0 to 0x40000000)
-    l1[l1_idx] = 0u64 | PTE_KERNEL_BLOCK;
+    // Map kernel with 1GB block (covers 0x40000000 to 0x7FFFFFFF)
+    l1[l1_idx] = KERNEL_VADDR | PTE_KERNEL_BLOCK;
 
     // Map framebuffer region (0xF0000000..0x100000000)
     let fb_start: u64 = 0xF0000000;

@@ -70,7 +70,12 @@ fn find_virtio_net_device() -> Option<(u8, u8, u8)> {
                 let device_id = pci_read_u16(bus, device, function, 0x02);
 
                 if vendor_id == VIRTIO_VENDOR_ID && device_id == VIRTIO_NET_DEVICE_ID {
-                    return Some((bus, device, function));
+                    let class = pci_read_u8(bus, device, function, 0x0B);
+                    let subclass = pci_read_u8(bus, device, function, 0x0A);
+
+                    if class == 0x02 && subclass == 0x00 {
+                        return Some((bus, device, function));
+                    }
                 }
             }
         }
