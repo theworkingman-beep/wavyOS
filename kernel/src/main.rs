@@ -317,6 +317,7 @@ extern "C" fn gui_task() -> ! {
             draw_desktop_custom(win_x, win_y, win_w, win_h, last_hovered_dock);
         }
 
+        crate::net::poll();
         scheduler::yield_cpu();
     }
 }

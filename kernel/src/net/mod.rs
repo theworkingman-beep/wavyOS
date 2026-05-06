@@ -11,6 +11,7 @@ use spin::Mutex;
 pub mod ethernet;
 pub mod arp;
 pub mod ipv4;
+pub mod icmp;
 pub mod udp;
 pub mod tcp;
 mod virtio_net;
@@ -20,6 +21,9 @@ static LOCAL_MAC: Mutex<[u8; 6]> = Mutex::new([0x52, 0x54, 0x00, 0x12, 0x34, 0x5
 
 /// Local IP address (QEMU user-mode networking)
 static LOCAL_IP: Mutex<[u8; 4]> = Mutex::new([10, 0, 2, 15]);
+
+/// DHCP gate
+pub const GATEWAY_IP: [u8; 4] = [10, 0, 2, 2];
 
 /// Initialize the networking stack
 pub fn init() {
@@ -49,10 +53,15 @@ pub fn recv_frame(buf: &mut [u8]) -> usize {
 
 /// Poll for incoming packets
 pub fn poll() {
-    let mut buf = [0u8; 1526];
-    let len = recv_frame(&mut buf);
-    if len > 0 {
-        process_frame(&buf[..len]);
+    // Process up to 4 packets at once
+    for _ in 0..4 {
+        let mut buf = [0u8; 1526];
+        let len = recv_frame(&mut buf);
+        if len > 0 {
+            process_frame(&buf[..len]);
+        } else {
+            break;
+        }
     }
 }
 
@@ -67,6 +76,7 @@ fn process_frame(frame: &[u8]) {
                 ethernet::ETHERTYPE_IPV4 => {
                     handle_ipv4(payload);
                 }
+                #[allow(unreachable_patterns)]
                 _ => {}
             }
         }
@@ -77,16 +87,23 @@ fn process_frame(frame: &[u8]) {
 /// Handle IPv4 packet
 fn handle_ipv4(data: &[u8]) {
     match ipv4::parse(data) {
-        Some((hdr, _payload)) => {
+        Some((hdr, payload)) => {
             if hdr.dst_ip != *LOCAL_IP.lock() {
-                return;
+                // Accept broadcast/multicast or our IP
+                let dst = u32::from_be_bytes(hdr.dst_ip);
+                if dst != 0xFFFFFFFF && dst & 0xF000_0000 != 0xE000_0000 {
+                    return;
+                }
             }
             match hdr.protocol {
+                ipv4::PROTOCOL_ICMP => {
+                    icmp::handle(payload, hdr.src_ip);
+                }
                 ipv4::PROTOCOL_UDP => {
-                    log::debug!("net: UDP packet");
+                    udp::handle(payload, hdr.src_ip);
                 }
                 ipv4::PROTOCOL_TCP => {
-                    log::debug!("net: TCP packet");
+                    tcp::handle(payload, hdr.src_ip);
                 }
                 _ => {}
             }
