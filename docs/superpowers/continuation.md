@@ -47,9 +47,9 @@ You are explicitly allowed and encouraged to cut corners where it makes sense. U
 ### Key Project Info
 
 - **Architecture:** UEFI-booted kernel (`no_std` Rust), UEFI bootloader loads kernel via memory map, cooperative scheduler with global_asm context switch
-- **Current state:** Boots on both x86_64 and aarch64 with GUI desktop (menu bar, dock, traffic-light windows), cooperative multitasking, UART serial logging, framebuffer rendering
 - **Build:** `./scripts/build.sh` produces versioned `.iso` and `.img` files
 - **CI:** Auto-release on push to main — bumps version, builds both arches in parallel, creates GitHub release with artifacts
+- always commit and push
 
 ---
 
