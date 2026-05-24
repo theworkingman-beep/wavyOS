@@ -14,6 +14,7 @@ pub mod ipv4;
 pub mod icmp;
 pub mod udp;
 pub mod tcp;
+pub mod dns;
 mod virtio_net;
 
 /// Local MAC address
@@ -100,6 +101,16 @@ fn handle_ipv4(data: &[u8]) {
                     icmp::handle(payload, hdr.src_ip);
                 }
                 ipv4::PROTOCOL_UDP => {
+                    // Check if this is a DNS response (source port 53)
+                    if payload.len() >= 8 {
+                        let src_port = u16::from_be_bytes([payload[0], payload[1]]);
+                        if src_port == 53 {
+                            let udp_len = u16::from_be_bytes([payload[4], payload[5]]) as usize;
+                            if udp_len >= 8 && udp_len <= payload.len() {
+                                dns::handle_response(&payload[8..udp_len]);
+                            }
+                        }
+                    }
                     udp::handle(payload, hdr.src_ip);
                 }
                 ipv4::PROTOCOL_TCP => {
