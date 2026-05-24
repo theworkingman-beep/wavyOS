@@ -42,6 +42,7 @@ mod fs;
 mod net;
 mod pty;
 mod time;
+mod audio;
 
 #[cfg(target_arch = "x86_64")]
 use arch::x86_64 as arch_impl;
@@ -500,6 +501,7 @@ pub extern "C" fn kernel_main(boot_info: *mut BootInfo) -> ! {
     net::init();
     pty::init();
     time::init();
+    audio::init();
 
     log::info!("Spawning GUI and shell tasks.");
 

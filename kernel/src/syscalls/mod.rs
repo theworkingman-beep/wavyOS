@@ -440,6 +440,38 @@ pub unsafe fn dispatch(n: usize, a1: usize, a2: usize, a3: usize, a4: usize, a5:
             }
             0
         }
+        // SYS_AUDIO_BEEP = 34: beep(freq, duration_ms) -> 0
+        // Play a beep through the PC speaker at the given frequency (Hz) and duration (ms).
+        34 => {
+            crate::audio::beep(a1 as u32, a2 as u32);
+            0
+        }
+        // SYS_AUDIO_PCM_WRITE = 35: pcm_write(buf_ptr, buf_len) -> bytes written
+        // Write PCM samples (16-bit signed mono 8kHz) to the audio output buffer.
+        35 => {
+            if a1 == 0 || a2 == 0 {
+                0
+            } else {
+                let buf = unsafe { core::slice::from_raw_parts(a1 as *const u8, a2) };
+                crate::audio::pcm_write(buf)
+            }
+        }
+        // SYS_AUDIO_VOLUME = 36: volume(cmd, value) -> result
+        // cmd=0: get volume, cmd=1: set volume (value=0-255), cmd=2: stop all audio
+        36 => {
+            match a1 {
+                0 => crate::audio::get_volume() as usize,
+                1 => {
+                    crate::audio::set_volume(a2 as u8);
+                    0
+                }
+                2 => {
+                    crate::audio::stop();
+                    0
+                }
+                _ => usize::MAX, // -1 equivalent
+            }
+        }
         0x700 => {
             // Mach-O exec
             crate::compat::macho::exec(a1 as *const u8, a2 as usize)

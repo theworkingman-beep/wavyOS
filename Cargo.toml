@@ -13,6 +13,7 @@ members = [
     "apps/terminal",
     "apps/libc",
     "apps/gui",
+    "apps/libaudio",
 ]
 
 default-members = [

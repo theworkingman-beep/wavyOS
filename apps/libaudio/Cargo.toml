@@ -1,0 +1,7 @@
+[package]
+name = "libaudio"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+vibe = { path = "../libvibe", package = "libvibe" }

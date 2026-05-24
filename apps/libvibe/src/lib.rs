@@ -40,6 +40,11 @@ pub const SYS_IOCTL: usize = 31;
 pub const SYS_GETTIMEOFDAY: usize = 32;
 pub const SYS_NANOSLEEP: usize = 33;
 
+// Audio syscalls
+pub const SYS_AUDIO_BEEP: usize = 34;
+pub const SYS_AUDIO_PCM_WRITE: usize = 35;
+pub const SYS_AUDIO_VOLUME: usize = 36;
+
 // IPC payload size matching kernel/src/ipc.rs
 pub const IPC_PAYLOAD_SIZE: usize = 64;
 
@@ -73,6 +78,19 @@ pub unsafe fn syscall1(n: usize, a1: usize) -> usize {
 }
 
 #[cfg(target_arch = "x86_64")]
+pub unsafe fn syscall2(n: usize, a1: usize, a2: usize) -> usize {
+    let ret: usize;
+    core::arch::asm!(
+        "int 0x80",
+        inlateout("rax") n => ret,
+        in("rdi") a1,
+        in("rsi") a2,
+        options(nostack, preserves_flags)
+    );
+    ret
+}
+
+#[cfg(target_arch = "x86_64")]
 pub unsafe fn syscall3(n: usize, a1: usize, a2: usize, a3: usize) -> usize {
     let ret: usize;
     core::arch::asm!(
@@ -93,6 +111,19 @@ pub unsafe fn syscall1(n: usize, a1: usize) -> usize {
         "svc #0",
         inlateout("x8") n => _,
         inlateout("x0") a1 => ret,
+        options(nostack, preserves_flags)
+    );
+    ret
+}
+
+#[cfg(target_arch = "aarch64")]
+pub unsafe fn syscall2(n: usize, a1: usize, a2: usize) -> usize {
+    let ret: usize;
+    core::arch::asm!(
+        "svc #0",
+        inlateout("x8") n => _,
+        inlateout("x0") a1 => ret,
+        in("x1") a2,
         options(nostack, preserves_flags)
     );
     ret
@@ -362,4 +393,46 @@ pub fn msg_terminal_ready(window_id: u16) -> [u8; IPC_PAYLOAD_SIZE] {
     msg[1] = window_id as u8;
     msg[2] = (window_id >> 8) as u8;
     msg
+}
+
+// ---- Audio syscalls ----
+
+/// Audio volume commands (for SYS_AUDIO_VOLUME)
+pub const AUDIO_VOL_GET: usize = 0;
+pub const AUDIO_VOL_SET: usize = 1;
+pub const AUDIO_VOL_STOP: usize = 2;
+
+/// Play a beep at the given frequency (Hz) and duration (ms).
+pub fn audio_beep(freq: u32, duration_ms: u32) {
+    unsafe {
+        let _ = syscall2(SYS_AUDIO_BEEP, freq as usize, duration_ms as usize);
+    }
+}
+
+/// Write PCM samples (16-bit signed, mono, 8kHz) to the audio output buffer.
+/// Returns the number of bytes written.
+pub fn audio_pcm_write(samples: &[u8]) -> usize {
+    if samples.is_empty() {
+        return 0;
+    }
+    unsafe { syscall2(SYS_AUDIO_PCM_WRITE, samples.as_ptr() as usize, samples.len()) }
+}
+
+/// Get the master audio volume (0-255).
+pub fn audio_get_volume() -> u8 {
+    unsafe { syscall2(SYS_AUDIO_VOLUME, AUDIO_VOL_GET, 0) as u8 }
+}
+
+/// Set the master audio volume (0-255).
+pub fn audio_set_volume(vol: u8) {
+    unsafe {
+        let _ = syscall2(SYS_AUDIO_VOLUME, AUDIO_VOL_SET, vol as usize);
+    }
+}
+
+/// Stop all audio playback (clear buffers, silence speaker).
+pub fn audio_stop() {
+    unsafe {
+        let _ = syscall2(SYS_AUDIO_VOLUME, AUDIO_VOL_STOP, 0);
+    }
 }
