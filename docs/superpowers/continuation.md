@@ -41,7 +41,7 @@ You are explicitly allowed and encouraged to cut corners where it makes sense. U
 - **AAVMF:** `/usr/share/AAVMF/AAVMF_CODE.no-secboot.fd` + `/usr/share/AAVMF/AAVMF_VARS.fd`
 - **Git credentials:** Author `theworkingman-beep <280896895+theworkingman-beep@users.noreply.github.com>`
 - **GitHub:** `theworkingman-beep/vibe-coded-os`
-- **Sudo password** stored in `/home/b/credentials.txt`
+- **Sudo password** stored in `/home/a/credentials.txt`
 - **GitHub Accessible via gh cli**
 
 ### Key Project Info
