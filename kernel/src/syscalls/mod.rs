@@ -30,6 +30,10 @@ pub enum Syscall {
     ShmMap = 11,
     FramebufferMap = 12,
     InputPoll = 13,
+    PtysOpen = 14,
+    PtysRead = 15,
+    PtysWrite = 16,
+    SpawnPtyShell = 17,
     MachOExec = 0x700,
 }
 
@@ -262,6 +266,64 @@ pub unsafe fn dispatch(n: usize, a1: usize, a2: usize, a3: usize, a4: usize, a5:
                 }
                 None => 0,
             }
+        }
+        14 => {
+            // ptys_open() — create a PTY master/slave pair
+            // Returns PTY ID (>=1 on success, 0 on failure)
+            let master_pid = crate::scheduler::current_task_id();
+            crate::pty::pty_open(master_pid)
+        }
+        15 => {
+            // ptys_read(pty_id, buf_ptr, buf_len) — read from PTY master (slave output)
+            let pty_id = a1;
+            let buf_ptr = a2 as *mut u8;
+            let buf_len = a3;
+            if buf_ptr.is_null() || buf_len == 0 { return 0; }
+            let buf = unsafe { core::slice::from_raw_parts_mut(buf_ptr, buf_len) };
+            // Check if caller is the master of this PTY
+            let caller_pid = crate::scheduler::current_task_id();
+            if crate::pty::pty_find_by_master_pid(caller_pid) != pty_id && pty_id != 0 {
+                // Also allow slave to read (for self-reading, though unusual)
+                if crate::pty::pty_find_by_slave_pid(caller_pid) != pty_id {
+                    log::warn!("syscall: ptys_read denied for pid={} on pty={}", caller_pid, pty_id);
+                    return 0;
+                }
+            }
+            crate::pty::pty_master_read(pty_id, buf)
+        }
+        16 => {
+            // ptys_write(pty_id, buf_ptr, buf_len) — write to PTY master (keyboard input to slave)
+            let pty_id = a1;
+            let buf_ptr = a2 as *const u8;
+            let buf_len = a3;
+            if buf_ptr.is_null() || buf_len == 0 { return 0; }
+            let data = unsafe { core::slice::from_raw_parts(buf_ptr, buf_len) };
+            let caller_pid = crate::scheduler::current_task_id();
+            if crate::pty::pty_find_by_master_pid(caller_pid) != pty_id {
+                // Also allow slave to write to its own master (slave->master direction)
+                if crate::pty::pty_find_by_slave_pid(caller_pid) == pty_id {
+                    return crate::pty::pty_slave_write(pty_id, data);
+                }
+                log::warn!("syscall: ptys_write denied for pid={} on pty={}", caller_pid, pty_id);
+                return 0;
+            }
+            crate::pty::pty_master_write(pty_id, data)
+        }
+        17 => {
+            // spawn_pty_shell(pty_id) — spawn the kernel shell as a child process
+            // connected to the given PTY's slave side.
+            // Returns the child PID on success, 0 on failure.
+            let pty_id = a1;
+            // Spawn a new kernel task running a shell connected to this PTY
+            let child_pid = crate::scheduler::spawn_shell_with_pty(pty_id);
+            if child_pid == 0 {
+                log::warn!("syscall: spawn_pty_shell failed to spawn shell task");
+                return 0;
+            }
+            // Assign the child process as the slave of this PTY
+            crate::pty::pty_assign_slave(pty_id, child_pid);
+            log::info!("syscall: spawn_pty_shell spawned shell pid={} on PTY id={}", child_pid, pty_id);
+            child_pid
         }
         0x700 => {
             // Mach-O exec

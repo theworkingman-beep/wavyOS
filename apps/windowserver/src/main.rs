@@ -10,6 +10,65 @@ extern crate libvibe;
 use alloc::vec::Vec;
 use libvibe::*;
 
+// ── Bump allocator for user-space app ──────────────────────────────────────
+const HEAP_SIZE: usize = 2 * 1024 * 1024; // 2 MB for WindowServer
+static mut HEAP: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
+
+struct BumpAlloc {
+    next: core::sync::atomic::AtomicUsize,
+    base: core::sync::atomic::AtomicUsize,
+}
+
+unsafe impl alloc::alloc::GlobalAlloc for BumpAlloc {
+    unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
+        let size = layout.size();
+        let align = layout.align();
+        // Lazily initialize base on first allocation
+        let base = {
+            let b = self.base.load(core::sync::atomic::Ordering::Relaxed);
+            if b == 0 {
+                let heap_base = HEAP.as_ptr() as usize;
+                self.base
+                    .store(heap_base, core::sync::atomic::Ordering::Relaxed);
+                self.next
+                    .store(heap_base, core::sync::atomic::Ordering::Relaxed);
+                heap_base
+            } else {
+                b
+            }
+        };
+        loop {
+            let current = self.next.load(core::sync::atomic::Ordering::Relaxed);
+            let aligned = (current + align - 1) & !(align - 1);
+            let new = aligned + size;
+            if new > base + HEAP_SIZE {
+                return core::ptr::null_mut();
+            }
+            if self
+                .next
+                .compare_exchange_weak(
+                    current,
+                    new,
+                    core::sync::atomic::Ordering::Relaxed,
+                    core::sync::atomic::Ordering::Relaxed,
+                )
+                .is_ok()
+            {
+                return aligned as *mut u8;
+            }
+        }
+    }
+    unsafe fn dealloc(&self, _ptr: *mut u8, _layout: core::alloc::Layout) {
+        // Bump allocator: no deallocation
+    }
+}
+
+#[global_allocator]
+static ALLOCATOR: BumpAlloc = BumpAlloc {
+    next: core::sync::atomic::AtomicUsize::new(0),
+    base: core::sync::atomic::AtomicUsize::new(0),
+};
+
 const MAX_WINDOWS: usize = 32;
 const TITLE_BAR_H: u16 = 36;
 const MENU_BAR_H: u16 = 28;

@@ -10,6 +10,7 @@ members = [
     "apps/windowserver",
     "apps/desktop_shell",
     "apps/sample_app",
+    "apps/terminal",
 ]
 
 default-members = [

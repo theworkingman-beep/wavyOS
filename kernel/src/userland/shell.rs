@@ -1,6 +1,13 @@
+//! Kernel-space shell that can operate standalone (UART) or via PTY
+//! When connected to a PTY (slave output goes to PTY master), output is
+//! directed through the PTY instead of just UART logging.
+
 use alloc::string::String;
 use alloc::vec::Vec;
 use crate::input::{self, InputEvent};
+
+/// Global PTY ID that this shell instance is connected to (0 = standalone/UART mode)
+static mut SHELL_PTY_ID: usize = 0;
 
 pub struct Shell {
     line: String,
@@ -21,29 +28,75 @@ impl Shell {
         }
     }
 
+    /// Write output - goes to PTY if connected, otherwise UART log
+    fn shell_write(&self, s: &str) {
+        let pty_id = unsafe { SHELL_PTY_ID };
+        if pty_id != 0 {
+            crate::pty::pty_slave_write(pty_id, s.as_bytes());
+        } else {
+            log::info!("{}", s);
+        }
+    }
+
     fn prompt(&self) {
-        log::info!("vibe-sh>");
+        self.shell_write("vibe-sh> ");
     }
 
     fn readline(&mut self) {
         self.line.clear();
+        let pty_id = unsafe { SHELL_PTY_ID };
         loop {
-            if let Some(event) = input::poll() {
-                match event {
-                    InputEvent::KeyPress { ascii } => {
-                        match ascii {
-                            b'\n' => break,
-                            b'\x08' => { self.line.pop(); }
-                            ascii if ascii >= 32 && ascii < 127 => {
-                                self.line.push(ascii as char);
-                            }
-                            _ => {}
+            // If connected to a PTY, read from PTY slave (master->slave direction)
+            if pty_id != 0 {
+                let mut buf = [0u8; 64];
+                let n = crate::pty::pty_slave_read(pty_id, &mut buf);
+                for i in 0..n {
+                    let ascii = buf[i];
+                    match ascii {
+                        b'\n' => {
+                            self.shell_write("\n");
+                            break;
                         }
+                        8 | 127 => {
+                            if self.line.pop().is_some() {
+                                self.shell_write("\x08 \x08"); // backspace, space, backspace
+                            }
+                        }
+                        ascii if ascii >= 32 && ascii < 127 => {
+                            self.line.push(ascii as char);
+                            // Echo the character back
+                            let echobuf = [ascii];
+                            self.shell_write(core::str::from_utf8(&echobuf).unwrap_or("?"));
+                        }
+                        _ => {}
                     }
-                    _ => {}
+                }
+                if n == 0 {
+                    crate::scheduler::yield_cpu();
+                    continue;
+                }
+                if self.line.contains('\n') || buf.iter().take(n).any(|&b| b == b'\n') {
+                    break;
                 }
             } else {
-                crate::scheduler::yield_cpu();
+                // Standalone mode: read from kernel input subsystem
+                if let Some(event) = input::poll() {
+                    match event {
+                        InputEvent::KeyPress { ascii } => {
+                            match ascii {
+                                b'\n' => break,
+                                b'\x08' => { self.line.pop(); }
+                                ascii if ascii >= 32 && ascii < 127 => {
+                                    self.line.push(ascii as char);
+                                }
+                                _ => {}
+                            }
+                        }
+                        _ => {}
+                    }
+                } else {
+                    crate::scheduler::yield_cpu();
+                }
             }
         }
         self.parts.clear();
@@ -56,42 +109,74 @@ impl Shell {
         if self.parts.is_empty() { return; }
         let parts: Vec<&str> = self.parts.iter().map(|s| s.as_str()).collect();
         match parts[0] {
-            "help" => log::info!("commands: help brew ls ps whoami exit"),
-            "ls" => log::info!("bin dev etc lib usr"),
-            "ps" => log::info!("PID 1 init"),
-            "whoami" => log::info!("root"),
+            "help" => self.shell_write("commands: help brew ls ps whoami exit\n"),
+            "ls" => self.shell_write("bin dev etc lib usr\n"),
+            "ps" => self.shell_write("PID 1 init\n"),
+            "whoami" => self.shell_write("root\n"),
             "brew" => self.brew_cmd(&parts[1..]),
-            "exit" => log::info!("shell exiting"),
-            _ => log::warn!("unknown command: {}", parts[0]),
+            "exit" => self.shell_write("shell exiting\n"),
+            _ => {
+                let mut msg = String::from("unknown command: ");
+                msg.push_str(parts[0]);
+                msg.push('\n');
+                self.shell_write(&msg);
+            }
         }
     }
 
     fn brew_cmd(&self, args: &[&str]) {
         if args.is_empty() {
-            log::info!("brew.sh: package manager for Vibe Coded OS");
+            self.shell_write("brew.sh: package manager for Vibe Coded OS\n");
             return;
         }
         match args[0] {
             "install" => {
-                if args.len() < 2 { log::warn!("brew install <pkg>"); return; }
+                if args.len() < 2 { self.shell_write("brew install <pkg>\n"); return; }
                 let _ = super::brew::install(args[1]);
             }
             "search" => {
-                if args.len() < 2 { log::warn!("brew search <query>"); return; }
+                if args.len() < 2 { self.shell_write("brew search <query>\n"); return; }
                 let hits = super::brew::search(args[1]);
-                for h in hits { log::info!("  {}", h); }
+                for h in hits { 
+                    let mut line = String::from("  ");
+                    line.push_str(&h);
+                    line.push('\n');
+                    self.shell_write(&line);
+                }
             }
             "list" => {
                 let pkgs = super::brew::list_installed();
-                for p in pkgs { log::info!("  {}", p); }
+                for p in pkgs {
+                    let mut line = String::from("  ");
+                    line.push_str(&p);
+                    line.push('\n');
+                    self.shell_write(&line);
+                }
             }
             "repo" => {
                 let repos = super::brew::list_repos();
-                for (name, url) in repos { log::info!("  {}: {}", name, url); }
+                for (name, url) in repos {
+                    let mut line = String::from("  ");
+                    line.push_str(&name);
+                    line.push_str(": ");
+                    line.push_str(&url);
+                    line.push('\n');
+                    self.shell_write(&line);
+                }
             }
-            _ => log::warn!("brew: unknown subcommand '{}'", args[0]),
+            _ => {
+                let mut msg = String::from("brew: unknown subcommand '");
+                msg.push_str(args[0]);
+                msg.push_str("'\n");
+                self.shell_write(&msg);
+            }
         }
     }
+}
+
+/// Set the PTY ID for the current shell (called before Shell::run)
+pub fn set_pty_id(id: usize) {
+    unsafe { SHELL_PTY_ID = id; }
 }
 
 pub fn init() {

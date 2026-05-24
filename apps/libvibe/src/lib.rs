@@ -1,5 +1,7 @@
 #![no_std]
 
+extern crate alloc;
+
 // Syscall numbers matching kernel/src/syscalls/mod.rs
 pub const SYS_EXIT: usize = 0;
 pub const SYS_WRITE: usize = 1;
@@ -15,6 +17,10 @@ pub const SYS_SHM_CREATE: usize = 10;
 pub const SYS_SHM_MAP: usize = 11;
 pub const SYS_FRAMEBUFFER_MAP: usize = 12;
 pub const SYS_INPUT_POLL: usize = 13;
+pub const SYS_PTYS_OPEN: usize = 14;
+pub const SYS_PTYS_READ: usize = 15;
+pub const SYS_PTYS_WRITE: usize = 16;
+pub const SYS_SPAWN_PTY_SHELL: usize = 17;
 
 // IPC payload size matching kernel/src/ipc.rs
 pub const IPC_PAYLOAD_SIZE: usize = 64;
@@ -176,7 +182,7 @@ pub fn ipc_send(target_pid: usize, msg: &[u8; IPC_PAYLOAD_SIZE]) -> usize {
 /// Receive an IPC message into buf (64 bytes).
 /// Returns sender info (sender_pid << 8 | msg_type) if message available, 0 if none.
 pub fn ipc_recv(buf: &mut [u8; IPC_PAYLOAD_SIZE]) -> usize {
-    unsafe { syscall3(SYS_IPC_RECV, buf.as_mut_ptr() as usize, IPC_PAYLOAD_SIZE) }
+    unsafe { syscall3(SYS_IPC_RECV, buf.as_mut_ptr() as usize, IPC_PAYLOAD_SIZE, 0) }
 }
 
 /// Create shared memory region of given size. Returns SHM ID, or 0 on failure.
@@ -265,4 +271,43 @@ pub fn parse_u16_at(msg: &[u8; IPC_PAYLOAD_SIZE], offset: usize) -> u16 {
     } else {
         0
     }
+}
+
+// ---- PTY Syscall wrappers ----
+
+/// Open a new PTY master/slave pair. Returns PTY ID (>=1 on success, 0 on failure).
+pub fn ptys_open() -> usize {
+    unsafe { syscall1(SYS_PTYS_OPEN, 0) }
+}
+
+/// Read from PTY master (read output from slave/shell).
+/// Returns number of bytes read.
+pub fn ptys_read(pty_id: usize, buf: &mut [u8]) -> usize {
+    if buf.is_empty() { return 0; }
+    unsafe { syscall3(SYS_PTYS_READ, pty_id, buf.as_mut_ptr() as usize, buf.len()) }
+}
+
+/// Write to PTY master (send keyboard input to slave/shell).
+/// Returns number of bytes written.
+pub fn ptys_write(pty_id: usize, data: &[u8]) -> usize {
+    if data.is_empty() { return 0; }
+    unsafe { syscall3(SYS_PTYS_WRITE, pty_id, data.as_ptr() as usize, data.len()) }
+}
+
+/// Spawn the kernel shell connected to a PTY. Returns child PID (0 on failure).
+pub fn spawn_pty_shell(pty_id: usize) -> usize {
+    unsafe { syscall1(SYS_SPAWN_PTY_SHELL, pty_id) }
+}
+
+// ---- Terminal IPC message types ----
+
+pub const MSG_TERMINAL_READY: u8 = 10;
+
+/// Build a TerminalReady IPC message (sends window_id back)
+pub fn msg_terminal_ready(window_id: u16) -> [u8; IPC_PAYLOAD_SIZE] {
+    let mut msg = [0u8; IPC_PAYLOAD_SIZE];
+    msg[0] = MSG_TERMINAL_READY;
+    msg[1] = window_id as u8;
+    msg[2] = (window_id >> 8) as u8;
+    msg
 }

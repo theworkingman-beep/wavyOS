@@ -40,6 +40,7 @@ mod input;
 mod wm;
 mod fs;
 mod net;
+mod pty;
 
 #[cfg(target_arch = "x86_64")]
 use arch::x86_64 as arch_impl;
@@ -495,6 +496,7 @@ pub extern "C" fn kernel_main(boot_info: *mut BootInfo) -> ! {
     userland::init();
     syscalls::init();
     net::init();
+    pty::init();
 
     log::info!("Spawning GUI and shell tasks.");
 
@@ -521,6 +523,17 @@ pub extern "C" fn kernel_main(boot_info: *mut BootInfo) -> ! {
             scheduler::spawn(shell_task);
         } else {
             log::info!("User-space DesktopShell spawned as pid={}", shell_pid);
+        }
+
+        #[cfg(feature = "userspace_terminal")]
+        {
+            let terminal_elf = include_bytes!("../../target/vibeos-x86_64/release/terminal");
+            let terminal_pid = spawn_userspace_app("terminal", terminal_elf);
+            if terminal_pid == 0 {
+                log::warn!("Terminal ELF load failed, terminal not available");
+            } else {
+                log::info!("User-space Terminal spawned as pid={}", terminal_pid);
+            }
         }
     }
 

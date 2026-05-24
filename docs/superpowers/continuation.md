@@ -75,7 +75,7 @@ You are explicitly allowed and encouraged to cut corners where it makes sense. U
 - [x] **Implement Mach-O compatibility layer** — Parse Mach-O 64-bit, map segments, handle relocations, dynamic linking stubs. Commit → CI release → test running simple Mach-O binary.
 - [x] **Implement networking stack (TCP/IP)** — Ethernet driver (virtio-net for QEMU), ARP, IP, UDP, TCP, DNS. Commit → CI release → test network connectivity.
 - [x] **Implement user-space WindowServer** — Separate compositor process, window creation/destruction, input routing to focused window, double-buffered rendering. Commit → CI release.
-- [ ] **Implement user-space terminal app** — PTY, shell as child process, text rendering with scrollback, keyboard input routing. Commit → CI release.
+- [x] **Implement user-space terminal app** — PTY, shell as child process, text rendering with scrollback, keyboard input routing. Commit → CI release.
 - [ ] **Implement libc compatibility layer** — Basic POSIX syscalls (open, read, write, malloc, exit, etc.) so existing C programs can be recompiled. Commit → CI release.
 - [ ] **Implement dynamic linker (dyld compatible)** — Load dylibs, resolve symbols, run init functions, lazy binding. Commit → CI release.
 - [ ] **Implement GUI framework (AppKit-like)** — Views, windows, events, drawing, buttons, text fields, menus. Commit → CI release.

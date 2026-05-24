@@ -258,6 +258,36 @@ pub fn spawn(entry: extern "C" fn() -> !) -> usize {
     pid
 }
 
+/// Spawn a kernel shell task connected to a PTY
+pub fn spawn_shell_with_pty(pty_id: usize) -> usize {
+    let pid = alloc_pid();
+    let mut task = Task::new(pid, pty_shell_entry as usize);
+    task.init_context();
+    let proc = Process {
+        pid,
+        task,
+        parent: *CURRENT_TASK.lock(),
+        children: Vec::new(),
+        exit_status: None,
+        waiters: Vec::new(),
+    };
+    PROCESSES.lock().push(proc);
+    // Store PTY ID for the shell entry function to pick up
+    // We use a static to pass the PTY ID since our spawn API doesn't support args
+    unsafe { NEXT_SHELL_PTY_ID = pty_id; }
+    pid
+}
+
+/// Temporary storage for PTY ID passed to newly spawned shell
+static mut NEXT_SHELL_PTY_ID: usize = 0;
+
+/// Entry point for shell tasks that are connected to a PTY
+extern "C" fn pty_shell_entry() -> ! {
+    let pty_id = unsafe { NEXT_SHELL_PTY_ID };
+    crate::userland::shell::set_pty_id(pty_id);
+    crate::userland::shell::Shell::run();
+}
+
 /// Spawn a user-space task with its own page tables
 pub fn spawn_user(entry: usize) -> usize {
     let pid = alloc_pid();
