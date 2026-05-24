@@ -77,7 +77,7 @@ You are explicitly allowed and encouraged to cut corners where it makes sense. U
 - [x] **Implement user-space WindowServer** — Separate compositor process, window creation/destruction, input routing to focused window, double-buffered rendering. Commit → CI release.
 - [x] **Implement user-space terminal app** — PTY, shell as child process, text rendering with scrollback, keyboard input routing. Commit → CI release.
 - [x] **Implement libc compatibility layer** — Basic POSIX syscalls (open, read, write, malloc, exit, etc.) so existing C programs can be recompiled. Commit → CI release.
-- [ ] **Implement dynamic linker (dyld compatible)** — Load dylibs, resolve symbols, run init functions, lazy binding. Commit → CI release.
+- [x] **Implement dynamic linker (dyld compatible)** — Load dylibs, resolve symbols, run init functions, lazy binding. Commit → CI release.
 - [ ] **Implement GUI framework (AppKit-like)** — Views, windows, events, drawing, buttons, text fields, menus. Commit → CI release.
 - [ ] **Implement audio subsystem** — Audio driver (virtio-sound or HDA), mixer, PCM playback, user-space API. Commit → CI release.
 - [ ] **Implement USB support** — xHCI host controller driver, HID class support for USB mouse/keyboard. Commit → CI release → test USB devices in QEMU.
