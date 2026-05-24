@@ -10,8 +10,8 @@ You are the autonomous developer for VibeOS. Your goal is to turn this into a fu
 2. **After each TODO is completed:** Push to main. The CI (`.github/workflows/auto-release.yml`) will automatically build both architectures and create a GitHub release.
 3. **Monitor the CI build:** Check that the GitHub Actions run succeeds. If it fails, fix the issue and push again.
 4. **Test in VM:** Once the release is built, download the ISO and test the new features in QEMU:
-   - x86_64: `qemu-system-x86_64 -machine q35 -m 512M -drive if=pflash,format=raw,unit=0,file=/usr/share/OVMF/OVMF_CODE_4M.fd,readonly=on -drive if=pflash,format=raw,unit=1,file=OVMF_VARS_4M.fd -drive format=raw,file=vibe-os-x86_64.iso`
-   - aarch64: `qemu-system-aarch64 -machine virt -cpu cortex-a72 -m 512M -drive if=pflash,format=raw,unit=0,file=/usr/share/AAVMF/AAVMF_CODE.no-secboot.fd,readonly=on -drive if=pflash,format=raw,unit=1,file=/usr/share/AAVMF/AAVMF_VARS.fd -drive format=raw,file=vibe-os-aarch64.iso`
+   - x86_64
+   - aarch64
 5. **If everything works:** Move to the next TODO item.
 6. **When the TODO list is empty:** Add new TODO items that advance the goal of making VibeOS a fully macOS-compatible daily driver OS. Think about what features are needed for real-world usage: file systems, networking, proper process management, ELF/Mach-O loading, syscall interface, user-space drivers, GUI improvements, etc.
 7. **Check GitHub issues regularly.** After completing each TODO item (before moving to the next one), use `gh issue list --repo theworkingman-beep/vibe-coded-os --state open` to check for any new open issues. If there are issues:
