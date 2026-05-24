@@ -12,6 +12,7 @@ members = [
     "apps/sample_app",
     "apps/terminal",
     "apps/libc",
+    "apps/gui",
 ]
 
 default-members = [
