@@ -133,7 +133,7 @@ pub fn dispatch(number: SyscallNumber, args: [usize; 16]) -> NtStatus {
 }
 
 fn handle_close(args: [usize; 16]) -> NtStatus {
-    let handle = FileHandle(args[0]);
+    let handle = objects::Handle(args[0] as u32);
     close(handle)
 }
 
@@ -176,7 +176,7 @@ fn handle_read_file(args: [usize; 16]) -> NtStatus {
     //   args[0] = handle
     //   args[1] = buffer pointer
     //   args[2] = length
-    let handle = FileHandle(args[0]);
+    let handle = objects::Handle(args[0] as u32);
     let buf_ptr = args[1] as u64;
     let len = args[2];
     if buf_ptr == 0 || len == 0 {
@@ -198,7 +198,7 @@ fn handle_write_file(args: [usize; 16]) -> NtStatus {
     //   args[0] = handle
     //   args[1] = buffer pointer
     //   args[2] = length
-    let handle = FileHandle(args[0]);
+    let handle = objects::Handle(args[0] as u32);
     let buf_ptr = args[1] as u64;
     let len = args[2];
     if buf_ptr == 0 || len == 0 {
@@ -237,11 +237,50 @@ fn handle_free_virtual_memory(args: [usize; 16]) -> NtStatus {
     free_virtual_memory(base, size)
 }
 
-/// Open or create a file and return a kernel file handle.
+/// Open or create a file and return an object-manager handle.
 pub fn create_file(
     path: &str,
     create: bool,
     _directory: bool,
+    write_access: bool,
+) -> Result<objects::Handle, NtStatus> {
+    let vfs_handle = open_vfs_file(path, create, write_access)?;
+    objects::allocate(objects::ObjectKind::File, vfs_handle.0 as *mut ())
+        .ok_or(NtStatus::InvalidParameter)
+}
+
+/// Read from an open file object handle.
+pub fn read_file(handle: objects::Handle, buffer: &mut [u8]) -> Result<usize, NtStatus> {
+    let vfs_handle = vfs_file_from_object(handle)?;
+    vfs::read(vfs_handle, buffer).ok_or(NtStatus::InvalidParameter)
+}
+
+/// Write to an open file object handle.
+pub fn write_file(handle: objects::Handle, buffer: &[u8]) -> Result<usize, NtStatus> {
+    let vfs_handle = vfs_file_from_object(handle)?;
+    vfs::write(vfs_handle, buffer).ok_or(NtStatus::InvalidParameter)
+}
+
+/// Close an open object handle.
+pub fn close(handle: objects::Handle) -> NtStatus {
+    let Some(header) = objects::lookup(handle) else {
+        return NtStatus::InvalidParameter;
+    };
+    if header.kind != objects::ObjectKind::File {
+        return NtStatus::InvalidParameter;
+    }
+    let _ = vfs::close(FileHandle(header.data));
+    if objects::close(handle) {
+        NtStatus::Success
+    } else {
+        NtStatus::InvalidParameter
+    }
+}
+
+/// Open or create a VFS file node and return its raw VFS handle.
+fn open_vfs_file(
+    path: &str,
+    create: bool,
     write_access: bool,
 ) -> Result<FileHandle, NtStatus> {
     let node = vfs::lookup(path);
@@ -265,23 +304,13 @@ pub fn create_file(
     vfs::open(node, write_access).ok_or(NtStatus::InvalidParameter)
 }
 
-/// Read from an open file.
-pub fn read_file(handle: FileHandle, buffer: &mut [u8]) -> Result<usize, NtStatus> {
-    vfs::read(handle, buffer).ok_or(NtStatus::InvalidParameter)
-}
-
-/// Write to an open file.
-pub fn write_file(handle: FileHandle, buffer: &[u8]) -> Result<usize, NtStatus> {
-    vfs::write(handle, buffer).ok_or(NtStatus::InvalidParameter)
-}
-
-/// Close an open handle.
-pub fn close(handle: FileHandle) -> NtStatus {
-    if vfs::close(handle) {
-        NtStatus::Success
-    } else {
-        NtStatus::InvalidParameter
+/// Extract the raw VFS file handle stored in a file object.
+fn vfs_file_from_object(handle: objects::Handle) -> Result<FileHandle, NtStatus> {
+    let header = objects::lookup(handle).ok_or(NtStatus::InvalidParameter)?;
+    if header.kind != objects::ObjectKind::File {
+        return Err(NtStatus::InvalidParameter);
     }
+    Ok(FileHandle(header.data))
 }
 
 /// Allocate virtual memory for a process.
@@ -311,7 +340,7 @@ pub fn free_virtual_memory(base: u64, size: usize) -> NtStatus {
 /// Returns the object handle for the created process and whether the guest
 /// architecture requires binary translation on the host.
 pub fn create_user_process(path: &str) -> Option<(objects::Handle, bool)> {
-    let file = create_file(path, false, false, false).ok()?;
+    let file = open_vfs_file(path, false, false).ok()?;
     let size = vfs::file_size(file)?;
     let buf = crate::mm::alloc_early(size, 1)?;
 
