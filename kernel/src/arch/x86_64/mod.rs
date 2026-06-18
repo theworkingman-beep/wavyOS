@@ -1,5 +1,6 @@
 //! x86_64 hardware abstraction layer.
 
+use uart_16550::SerialPort;
 use x86_64::instructions::port::Port;
 
 pub mod context_switch;
@@ -9,6 +10,10 @@ pub mod syscall;
 
 /// Initialize x86_64-specific hardware.
 pub fn init() {
+    unsafe {
+        let mut com1 = SerialPort::new(0x3F8);
+        com1.init();
+    }
     unsafe {
         gdt::init();
     }
