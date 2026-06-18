@@ -135,6 +135,14 @@ pub fn open(node: NodeId, writable: bool) -> Option<FileHandle> {
     Some(FileHandle(index))
 }
 
+/// Return the current size of the file identified by `handle`.
+pub fn file_size(handle: FileHandle) -> Option<usize> {
+    let open = OPEN_FILES.lock();
+    let file = open[handle.0].as_ref()?;
+    let sizes = FILE_SIZES.lock();
+    Some(sizes[file.node.0])
+}
+
 /// Close an open file handle.
 pub fn close(handle: FileHandle) -> bool {
     let mut open = OPEN_FILES.lock();

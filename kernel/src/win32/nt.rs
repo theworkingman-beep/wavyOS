@@ -4,6 +4,7 @@
 //! implementations for the most important NT kernel calls. The implementations
 //! route to the Aperture OS VFS and memory allocator.
 
+use super::{loader, objects};
 use crate::vfs::{self, FileHandle, NodeKind};
 use core::sync::atomic::{AtomicBool, Ordering};
 
@@ -126,6 +127,25 @@ pub fn free_virtual_memory(base: u64, size: usize) -> NtStatus {
         crate::mm::frame_allocator::free(base + i as u64 * 4096);
     }
     NtStatus::Success
+}
+
+/// Load a PE executable from the VFS into a new process.
+///
+/// Returns the object handle for the created process and whether the guest
+/// architecture requires binary translation on the host.
+pub fn create_user_process(path: &str) -> Option<(objects::Handle, bool)> {
+    let file = create_file(path, false, false, false).ok()?;
+    let size = vfs::file_size(file)?;
+    let buf = crate::mm::alloc_early(size, 1)?;
+
+    let slice = unsafe { core::slice::from_raw_parts_mut(buf, size) };
+    let read = vfs::read(file, slice)?;
+    if read != size {
+        return None;
+    }
+
+    let _ = vfs::close(file);
+    loader::load_pe(slice, 1)
 }
 
 fn parent(path: &str) -> &str {

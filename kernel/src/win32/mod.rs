@@ -30,29 +30,42 @@ pub fn init() {
     nt::init();
 }
 
-/// Load a small synthetic PE image to verify the loader and memory subsystem.
+/// Load a small synthetic PE image from the VFS to verify the loader, VFS,
+/// and NT process creation path.
 ///
 /// Must be called after the physical frame allocator and early heap have been
 /// initialized.
 pub fn self_test() {
-    let Some((handle, needs_translation)) = loader::load_pe(loader::MINIMAL_PE64, 1) else {
-        crate::logln!("win32: PE loader self-test FAILED.");
+    // Ensure /bin/test.exe exists and contains the minimal PE fixture.
+    let bin = crate::vfs::lookup("/bin").unwrap_or_else(|| {
+        crate::vfs::create(crate::vfs::NodeId(0), "bin", crate::vfs::NodeKind::Directory)
+            .expect("create /bin")
+    });
+    let test_exe = crate::vfs::create(bin, "test.exe", crate::vfs::NodeKind::File)
+        .unwrap_or_else(|| crate::vfs::lookup("/bin/test.exe").expect("/bin/test.exe node"));
+    let file = crate::vfs::open(test_exe, true).expect("open /bin/test.exe");
+    let written = crate::vfs::write(file, loader::MINIMAL_PE64).expect("write fixture");
+    assert_eq!(written, loader::MINIMAL_PE64.len());
+    crate::vfs::close(file);
+
+    let Some((handle, needs_translation)) = nt::create_user_process("/bin/test.exe") else {
+        crate::logln!("win32: NtCreateUserProcess self-test FAILED.");
         return;
     };
 
     let header = objects::lookup(handle);
     let Some(header) = header else {
-        crate::logln!("win32: loaded process handle {} not found.", handle.0);
+        crate::logln!("win32: created process handle {} not found.", handle.0);
         return;
     };
 
-    let process = unsafe { &*(header.data as *const process::Process) };
+    let proc = unsafe { &*(header.data as *const process::Process) };
     crate::logln!(
-        "win32: PE loader self-test OK. pid={} image_base={:#x} image_size={:#x} entry={:#x} translation={}",
-        process.pid,
-        process.image_base,
-        process.image_size,
-        process.entry_point,
+        "win32: NtCreateUserProcess self-test OK. pid={} image_base={:#x} image_size={:#x} entry={:#x} translation={}",
+        proc.pid,
+        proc.image_base,
+        proc.image_size,
+        proc.entry_point,
         needs_translation
     );
 }
