@@ -7,6 +7,7 @@ authors = ["Aperture OS Team"]
 [dependencies]
 spin = "0.10.0"
 pe-parser = { path = "../crates/pe-parser" }
+x86-decode = { path = "../crates/x86-decode" }
 
 [dependencies.bootloader_api]
 version = "0.11.9"

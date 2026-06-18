@@ -120,6 +120,17 @@ fn thread_mut(slot: usize) -> Option<&'static mut Thread> {
     unsafe { Some(&mut *THREAD_STORAGE[slot].as_mut_ptr()) }
 }
 
+/// Run `f` on the currently running thread, if any.
+pub fn with_current_thread<F, R>(f: F) -> Option<R>
+where
+    F: FnOnce(&mut Thread) -> R,
+{
+    let slot = *CURRENT_THREAD.lock();
+    let slot = slot?;
+    let t = thread_mut(slot)?;
+    Some(f(t))
+}
+
 /// Switch to the next ready thread, saving the current context.
 ///
 /// # Safety
