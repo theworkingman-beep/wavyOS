@@ -1,87 +1,49 @@
 //! PE/COFF loader for Windows executables.
 //!
-//! Supports both x86_64 (`IMAGE_FILE_MACHINE_AMD64`) and AArch64
-//! (`IMAGE_FILE_MACHINE_ARM64`) PE images. On a mismatched host architecture, the
-//! loader queues the image for dynamic binary translation.
+//! Reuses the architecture-independent `pe-parser` crate and adds process
+//! address-space loading support.
+
+pub use pe_parser::{parse_pe, parse_section_header, MachineType, PeImage, SectionHeader};
 
 use super::process::Process;
-
-/// PE machine types relevant to Aperture OS.
-#[repr(u16)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum MachineType {
-    I386 = 0x014C,
-    Amd64 = 0x8664,
-    Arm64 = 0xAA64,
-}
-
-/// Result of parsing a PE image.
-pub struct PeImage {
-    pub machine: MachineType,
-    pub entry_point: u64,
-    pub image_base: u64,
-    pub image_size: u64,
-    pub is_dll: bool,
-}
-
-/// Parse a PE image in memory. Returns `None` if the header is invalid.
-pub fn parse_pe(data: &[u8]) -> Option<PeImage> {
-    if data.len() < 0x40 {
-        return None;
-    }
-    if &data[0..2] != b"MZ" {
-        return None;
-    }
-    let pe_offset = u32::from_le_bytes([data[0x3C], data[0x3D], data[0x3E], data[0x3F]]) as usize;
-    if pe_offset + 24 > data.len() || &data[pe_offset..pe_offset + 4] != b"PE\0\0" {
-        return None;
-    }
-
-    let machine = u16::from_le_bytes([data[pe_offset + 4], data[pe_offset + 5]]);
-    let num_sections = u16::from_le_bytes([data[pe_offset + 6], data[pe_offset + 7]]);
-    let opt_header_size = u16::from_le_bytes([data[pe_offset + 20], data[pe_offset + 21]]) as usize;
-    let characteristics = u16::from_le_bytes([data[pe_offset + 22], data[pe_offset + 23]]);
-
-    let machine = match machine {
-        0x8664 => MachineType::Amd64,
-        0xAA64 => MachineType::Arm64,
-        0x014C => MachineType::I386,
-        _ => return None,
-    };
-
-    let is_dll = (characteristics & 0x2000) != 0;
-
-    let opt_offset = pe_offset + 24;
-    if opt_offset + 8 > data.len() {
-        return None;
-    }
-    let magic = u16::from_le_bytes([data[opt_offset], data[opt_offset + 1]]);
-    let image_base = if magic == 0x20B {
-        // PE32+ optional header
-        u64::from_le_bytes(data[opt_offset + 24..opt_offset + 32].try_into().ok()?)
-    } else if magic == 0x10B {
-        // PE32 optional header
-        u32::from_le_bytes(data[opt_offset + 28..opt_offset + 32].try_into().ok()?) as u64
-    } else {
-        return None;
-    };
-
-    let entry_point = u32::from_le_bytes(data[opt_offset + 16..opt_offset + 20].try_into().ok()?) as u64;
-    let image_size = u32::from_le_bytes(data[opt_offset + 56..opt_offset + 60].try_into().ok()?) as u64;
-
-    let _ = num_sections;
-    let _ = opt_header_size;
-
-    Some(PeImage {
-        machine,
-        entry_point: image_base + entry_point,
-        image_base,
-        image_size,
-        is_dll,
-    })
-}
 
 /// Load a parsed PE image into a process address space.
 pub fn load_into_process(_image: &PeImage, _process: &mut Process, _data: &[u8]) {
     // TODO: map sections, relocate, resolve imports, set entry point.
+    for i in 0.._image.num_sections as usize {
+        let offset = _image.section_table_offset + i * 40;
+        if let Some(_section) = parse_section_header(_data, offset) {
+            map_section(_process, _image, &_section, _data);
+        }
+    }
+}
+
+fn map_section(_process: &mut Process, _image: &PeImage, _section: &SectionHeader, _data: &[u8]) {
+    // Placeholder: allocate frames and copy raw section data.
+    let _ = (_process, _image, _section, _data);
+}
+
+/// Determine if a guest PE architecture can run natively on the host.
+pub fn requires_translation(guest: MachineType) -> bool {
+    let host = host_machine();
+    guest != host
+}
+
+fn host_machine() -> MachineType {
+    #[cfg(target_arch = "x86_64")]
+    {
+        MachineType::Amd64
+    }
+    #[cfg(target_arch = "aarch64")]
+    {
+        MachineType::Arm64
+    }
+    #[cfg(target_arch = "x86")]
+    {
+        MachineType::I386
+    }
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "x86")))]
+    {
+        MachineType::Amd64
+    }
 }
