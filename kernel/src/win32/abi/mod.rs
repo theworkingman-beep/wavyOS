@@ -14,6 +14,7 @@
 
 pub mod aarch64_jit;
 pub mod interpreter;
+pub mod syscall;
 pub mod x86_jit;
 
 /// Target architecture being emulated.

@@ -51,13 +51,101 @@ pub enum SyscallNumber {
     NtWaitForMultipleObjects = 0x0001,
 }
 
-/// Syscall dispatch stub. The real entry point will marshal arguments from
-/// the user-mode trap frame and call the appropriate handler.
-pub fn dispatch(_number: SyscallNumber, _args: [usize; 16]) -> NtStatus {
+impl SyscallNumber {
+    /// Convert a raw syscall number to the enum, if known.
+    pub fn from_raw(value: usize) -> Option<Self> {
+        use SyscallNumber::*;
+        Some(match value {
+            0x0055 => NtCreateFile,
+            0x000F => NtClose,
+            0x006F => NtReadFile,
+            0x0008 => NtWriteFile,
+            0x0018 => NtAllocateVirtualMemory,
+            0x001E => NtFreeVirtualMemory,
+            0x004F => NtCreateProcess,
+            0x004E => NtCreateThread,
+            0x0036 => NtQuerySystemInformation,
+            0x0019 => NtQueryInformationProcess,
+            0x001C => NtSetInformationProcess,
+            0x0034 => NtDelayExecution,
+            0x001D => NtCreateKey,
+            0x0049 => NtQueryValueKey,
+            0x005D => NtSetValueKey,
+            0x0001 => NtWaitForMultipleObjects,
+            _ => return None,
+        })
+    }
+}
+
+/// Syscall dispatch table entry.
+#[derive(Clone, Copy)]
+struct SyscallHandler {
+    func: fn([usize; 16]) -> NtStatus,
+}
+
+macro_rules! handler_table {
+    ($(($num:expr, $fn:ident)),* $(,)?) => {
+        {
+            let mut table: [Option<SyscallHandler>; 256] = [None; 256];
+            $(
+                table[$num as usize] = Some(SyscallHandler { func: $fn });
+            )*
+            table
+        }
+    };
+}
+
+static mut SYSCALL_TABLE: [Option<SyscallHandler>; 256] = [None; 256];
+
+/// Initialize the syscall dispatch table.
+pub fn init_syscall_table() {
+    unsafe {
+        SYSCALL_TABLE = handler_table!(
+            (SyscallNumber::NtClose, handle_close),
+            (SyscallNumber::NtAllocateVirtualMemory, handle_allocate_virtual_memory),
+            (SyscallNumber::NtFreeVirtualMemory, handle_free_virtual_memory),
+        );
+    }
+}
+
+/// Syscall dispatch stub. The real entry point marshals arguments from the
+/// user-mode trap frame and calls the appropriate handler.
+pub fn dispatch(number: SyscallNumber, args: [usize; 16]) -> NtStatus {
     if !INITIALIZED.load(Ordering::Relaxed) {
         return NtStatus::AccessDenied;
     }
-    NtStatus::NotImplemented
+    unsafe {
+        if let Some(handler) = SYSCALL_TABLE[number as usize] {
+            (handler.func)(args)
+        } else {
+            NtStatus::NotImplemented
+        }
+    }
+}
+
+fn handle_close(args: [usize; 16]) -> NtStatus {
+    let handle = FileHandle(args[0]);
+    close(handle)
+}
+
+fn handle_allocate_virtual_memory(args: [usize; 16]) -> NtStatus {
+    let size = args[1];
+    match allocate_virtual_memory(size) {
+        Ok(base) => {
+            let base_ptr = args[0] as *mut u64;
+            if !base_ptr.is_null() {
+                unsafe { base_ptr.write(base); }
+            }
+            NtStatus::Success
+        }
+        Err(status) => status,
+    }
+}
+
+fn handle_free_virtual_memory(args: [usize; 16]) -> NtStatus {
+    let base = args[0] as u64;
+    let size = args[1];
+    free_virtual_memory(base, size)
 }
 
 /// Open or create a file and return a kernel file handle.

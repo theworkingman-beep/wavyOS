@@ -29,6 +29,7 @@ pub fn init() {
     objects::init();
     registry::init();
     nt::init();
+    nt::init_syscall_table();
 }
 
 /// Load a small synthetic PE image from the VFS to verify the loader, VFS,
