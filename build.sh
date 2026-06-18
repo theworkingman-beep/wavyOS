@@ -42,6 +42,8 @@ if [[ "$ARCH" == "x86_64" ]]; then
     echo "UEFI image: $UEFI_IMAGE"
     echo "BIOS image: $BIOS_IMAGE"
 else
-    echo "Kernel ELF: $KERNEL_ELF"
-    echo "AArch64 boot image generation not yet implemented (requires U-Boot/Limine setup)."
+    echo "Building AArch64 boot image..."
+    ISO_IMAGE="target/aperture-aarch64.iso"
+    tools/aarch64-bootimage.sh "$KERNEL_ELF" "$ISO_IMAGE"
+    echo "AArch64 boot image: $ISO_IMAGE"
 fi

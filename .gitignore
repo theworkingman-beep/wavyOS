@@ -15,3 +15,6 @@ tools/__pycache__/
 
 # OS files
 .DS_Store
+
+# Bootloader build cache
+tools/limine-cache/

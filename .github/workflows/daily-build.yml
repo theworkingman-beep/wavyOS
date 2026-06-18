@@ -68,10 +68,12 @@ jobs:
         with:
           components: rust-src, llvm-tools-preview
 
-      - name: Install AArch64 target compiler
-        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu qemu-system-arm
+      - name: Install AArch64 build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu qemu-system-arm xorriso
 
-      - name: Build AArch64 kernel ELF
+      - name: Build AArch64 kernel and boot image
         run: ARCH=aarch64 ./build.sh
 
       - name: Run host tests
@@ -82,6 +84,13 @@ jobs:
         with:
           name: aperture-os-aarch64-kernel-elf
           path: target/aarch64-unknown-none/debug/kernel
+          if-no-files-found: error
+
+      - name: Upload AArch64 boot image
+        uses: actions/upload-artifact@v4
+        with:
+          name: aperture-os-aarch64-boot-image
+          path: target/aperture-aarch64.iso
           if-no-files-found: error
 
   release:
@@ -102,6 +111,12 @@ jobs:
           name: aperture-os-aarch64-kernel-elf
           path: release/
 
+      - name: Download AArch64 boot image
+        uses: actions/download-artifact@v4
+        with:
+          name: aperture-os-aarch64-boot-image
+          path: release/
+
       - name: Compute nightly date
         id: date
         run: |
@@ -112,6 +127,7 @@ jobs:
         run: |
           mv release/aperture.iso "release/aperture-os-x86_64-${RELEASE_DATE}.iso"
           mv release/kernel "release/aperture-os-aarch64-${RELEASE_DATE}.elf"
+          mv release/aperture-aarch64.iso "release/aperture-os-aarch64-${RELEASE_DATE}.iso"
         env:
           RELEASE_DATE: ${{ steps.date.outputs.date }}
 
@@ -125,6 +141,7 @@ jobs:
 
             Assets:
             - `aperture-os-x86_64-${{ steps.date.outputs.date }}.iso` — hybrid BIOS+UEFI bootable ISO
+            - `aperture-os-aarch64-${{ steps.date.outputs.date }}.iso` — AArch64 UEFI bootable ISO
             - `aperture-os-aarch64-${{ steps.date.outputs.date }}.elf` — AArch64 kernel ELF
           files: release/*
           prerelease: true
