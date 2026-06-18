@@ -1,0 +1,70 @@
+name: Daily Build
+
+on:
+  # Run every day at 06:00 UTC.
+  schedule:
+    - cron: '0 6 * * *'
+  # Also run on every push and pull request to main.
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-x86_64:
+    name: Build x86_64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src, llvm-tools-preview
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86
+
+      - name: Build x86_64 kernel and boot images
+        run: ./build.sh x86_64
+
+      - name: Run host tests
+        run: cargo test -p x86-decode && cargo test -p pe-parser
+
+      - name: Upload x86_64 boot images
+        uses: actions/upload-artifact@v4
+        with:
+          name: aperture-os-x86_64-boot-images
+          path: |
+            target/aperture-uefi.img
+            target/aperture-bios.img
+          if-no-files-found: error
+
+  build-aarch64:
+    name: Build AArch64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src, llvm-tools-preview
+
+      - name: Install AArch64 target compiler
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu qemu-system-arm
+
+      - name: Build AArch64 kernel ELF
+        run: ARCH=aarch64 ./build.sh
+
+      - name: Run host tests
+        run: cargo test -p x86-decode && cargo test -p pe-parser
+
+      - name: Upload AArch64 kernel ELF
+        uses: actions/upload-artifact@v4
+        with:
+          name: aperture-os-aarch64-kernel-elf
+          path: target/aarch64-unknown-none/debug/kernel
+          if-no-files-found: error
