@@ -2,12 +2,10 @@
 resolver = "3"
 members = [
     "kernel",
-    "bootloader",
 ]
-
-[workspace.metadata.bootimage]
-kernel = "kernel"
-kernel-path = "target/x86_64-unknown-none/debug/kernel"
+exclude = [
+    "tools/bootimage",
+]
 
 [profile.dev]
 panic = "abort"

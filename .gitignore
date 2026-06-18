@@ -1,7 +1,11 @@
-# Build artifacts
+# Rust build artifacts
 /target
+**/target
 **/*.rs.bk
-Cargo.lock
+
+# Cargo lockfiles inside workspace members (kept only at workspace root)
+/kernel/Cargo.lock
+/tools/*/Cargo.lock
 
 # IDE
 .idea/
@@ -13,3 +17,6 @@ Cargo.lock
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude Code
+.claude/

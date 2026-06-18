@@ -1,9 +1,2 @@
-[unstable]
-build-std = ["core", "compiler_builtins", "alloc"]
-build-std-features = ["compiler-builtins-mem"]
-
-[target.'cfg(target_os = "none")']
-runner = "./run-qemu.sh"
-
 [alias]
-run-os = "run --package aperture-boot"
+build-os = "build -p kernel"
