@@ -70,19 +70,26 @@ pub fn self_test() {
         needs_translation
     );
 
-    let slot = scheduler::create_thread(proc.pid, proc.entry_point)
-        .expect("create initial thread for loaded process");
-    let thread = scheduler::thread(slot).expect("scheduled thread");
-    crate::logln!(
-        "win32: scheduling thread tid={} entry={:#x} slot={}",
-        thread.tid,
-        thread.entry_point,
-        slot
-    );
+    if needs_translation {
+        crate::logln!("win32: guest architecture differs from host; running interpreter.");
+        unsafe {
+            abi::interpreter::run_x86_64_loop(proc.entry_point);
+        }
+    } else {
+        let slot = scheduler::create_thread(proc.pid, proc.entry_point)
+            .expect("create initial thread for loaded process");
+        let thread = scheduler::thread(slot).expect("scheduled thread");
+        crate::logln!(
+            "win32: scheduling thread tid={} entry={:#x} slot={}",
+            thread.tid,
+            thread.entry_point,
+            slot
+        );
 
-    unsafe {
-        scheduler::schedule();
+        unsafe {
+            scheduler::schedule();
+        }
+
+        crate::logln!("win32: returned to idle after scheduling.");
     }
-
-    crate::logln!("win32: returned to idle after scheduling.");
 }

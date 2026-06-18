@@ -13,6 +13,7 @@
 //! the per-architecture translators.
 
 pub mod aarch64_jit;
+pub mod interpreter;
 pub mod x86_jit;
 
 /// Target architecture being emulated.

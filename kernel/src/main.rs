@@ -98,6 +98,23 @@ mod x86_64_entry {
 pub extern "C" fn _start() -> ! {
     kernel::init();
     kernel::logln!("Aperture OS AArch64 kernel booting...");
+
+    // Early bring-up uses a hardcoded usable memory region. A real AArch64
+    // boot path will parse the device tree / UEFI memory map instead.
+    let region = kernel::boot_info::MemoryRegion {
+        start: 0x4000_0000,
+        end: 0x4100_0000,
+        kind: kernel::boot_info::MemoryRegionKind::Usable,
+    };
+    unsafe {
+        kernel::mm::init_physical_allocator(core::slice::from_ref(&region));
+    }
+    kernel::logln!("Physical frame allocator initialized (hardcoded region).");
+    kernel::mm::init_heap(region.start, region.end);
+    kernel::logln!("Early heap: {:#x} - {:#x} ({} MiB)", region.start, region.end, 16);
+
+    kernel::win32::self_test();
+
     kernel::logln!("No framebuffer on this boot path yet.");
     kernel::logln!("Kernel idle.");
     kernel::hlt();
