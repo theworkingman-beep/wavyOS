@@ -83,6 +83,10 @@ pub fn self_test() {
         needs_translation
     );
 
+    // Exercise the AArch64 decoder on every boot to verify the ARM→x86
+    // translation layer is present, even when the current fixture is x86_64.
+    abi::aarch64_interpreter::self_test();
+
     if needs_translation {
         crate::logln!("win32: guest architecture differs from host; running interpreter.");
         unsafe {

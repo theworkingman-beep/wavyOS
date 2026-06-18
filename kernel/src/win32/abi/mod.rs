@@ -12,6 +12,7 @@
 //! This module is intentionally architecture-agnostic. Submodules implement
 //! the per-architecture translators.
 
+pub mod aarch64_interpreter;
 pub mod aarch64_jit;
 pub mod interpreter;
 pub mod syscall;
