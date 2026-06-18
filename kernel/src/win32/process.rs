@@ -14,6 +14,9 @@ pub struct Process {
     pub image_size: u64,
     /// Absolute entry point address inside the mapped image.
     pub entry_point: u64,
+    /// Physical address of the top-level page table (CR3) for this process,
+    /// or 0 if the architecture does not use per-process page tables yet.
+    pub page_table_root: u64,
 }
 
 impl Process {
@@ -26,6 +29,7 @@ impl Process {
             image_base: 0,
             image_size: 0,
             entry_point: 0,
+            page_table_root: 0,
         }
     }
 }

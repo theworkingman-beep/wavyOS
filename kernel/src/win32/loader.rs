@@ -6,6 +6,7 @@
 pub use pe_parser::{parse_pe, parse_section_header, MachineType, PeImage, SectionHeader};
 
 use super::{objects, process::Process};
+use crate::mm::page_table::{PageTable, PAGE_EXECUTE, PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE};
 use core::ptr;
 
 /// A minimal hand-crafted x86_64 PE executable used for loader self-tests.
@@ -25,6 +26,11 @@ pub fn load_into_process(image: &PeImage, process: &mut Process, data: &[u8]) ->
     process.image_base = base;
     process.image_size = image.image_size;
 
+    // On x86_64 we also build a per-process page table that maps the PE's
+    // preferred virtual base to the physical frames we just allocated. The
+    // table is not yet activated; this just establishes the data structure.
+    let mut page_table = PageTable::new();
+
     // Zero the allocated region before copying sections.
     unsafe {
         ptr::write_bytes(base as *mut u8, 0, total_pages * 4096);
@@ -36,8 +42,16 @@ pub fn load_into_process(image: &PeImage, process: &mut Process, data: &[u8]) ->
         let Some(section) = parse_section_header(data, offset) else {
             return false;
         };
-        map_section(process, &section, data, base);
+        map_section(
+            &section,
+            data,
+            base,
+            image.image_base,
+            page_table.as_mut(),
+        );
     }
+
+    process.page_table_root = page_table.map(|pt| pt.cr3()).unwrap_or(0);
 
     // Record the absolute entry point inside the mapped image.
     let entry_rva = image.entry_point.saturating_sub(image.image_base);
@@ -46,8 +60,14 @@ pub fn load_into_process(image: &PeImage, process: &mut Process, data: &[u8]) ->
     true
 }
 
-fn map_section(process: &Process, section: &SectionHeader, data: &[u8], base: u64) {
-    let dest = base + section.virtual_address as u64;
+fn map_section(
+    section: &SectionHeader,
+    data: &[u8],
+    phys_base: u64,
+    virt_base: u64,
+    page_table: Option<&mut PageTable>,
+) {
+    let dest = phys_base + section.virtual_address as u64;
     let raw_size = section.raw_size as usize;
     let virtual_size = section.virtual_size as usize;
 
@@ -71,7 +91,15 @@ fn map_section(process: &Process, section: &SectionHeader, data: &[u8], base: u6
         }
     }
 
-    let _ = process; // Process metadata will be used for per-section permissions later.
+    // Map the section into the per-process page table if one exists.
+    if let Some(pt) = page_table {
+        let section_virt = virt_base + section.virtual_address as u64;
+        let section_phys = phys_base + section.virtual_address as u64;
+        let flags = PAGE_PRESENT | PAGE_USER | PAGE_WRITABLE | PAGE_EXECUTE;
+        unsafe {
+            pt.map(section_virt, section_phys, flags);
+        }
+    }
 }
 
 fn allocate_contiguous(pages: usize) -> Option<u64> {

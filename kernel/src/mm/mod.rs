@@ -5,6 +5,7 @@
 //! the bump allocator once the MMU is configured per-architecture.
 
 pub mod frame_allocator;
+pub mod page_table;
 
 use crate::boot_info::{MemoryRegion, MemoryRegionKind};
 use core::sync::atomic::{AtomicUsize, Ordering};
