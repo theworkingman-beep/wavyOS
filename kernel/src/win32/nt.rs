@@ -108,6 +108,9 @@ pub fn init_syscall_table() {
     unsafe {
         SYSCALL_TABLE = handler_table!(
             (SyscallNumber::NtClose, handle_close),
+            (SyscallNumber::NtCreateFile, handle_create_file),
+            (SyscallNumber::NtReadFile, handle_read_file),
+            (SyscallNumber::NtWriteFile, handle_write_file),
             (SyscallNumber::NtAllocateVirtualMemory, handle_allocate_virtual_memory),
             (SyscallNumber::NtFreeVirtualMemory, handle_free_virtual_memory),
         );
@@ -132,6 +135,74 @@ pub fn dispatch(number: SyscallNumber, args: [usize; 16]) -> NtStatus {
 fn handle_close(args: [usize; 16]) -> NtStatus {
     let handle = FileHandle(args[0]);
     close(handle)
+}
+
+fn handle_create_file(args: [usize; 16]) -> NtStatus {
+    // Simplified ABI for bring-up tests: args[2] is a pointer to a
+    // null-terminated path, args[7] is create disposition (nonzero = create),
+    // args[1] is access mask (GENERIC_WRITE bit enables writing).
+    let path_ptr = args[2] as u64;
+    let out_handle_ptr = args[0] as u64;
+    if path_ptr == 0 || out_handle_ptr == 0 {
+        return NtStatus::InvalidParameter;
+    }
+
+    let path_phys = match unsafe { user_ptr_to_phys(path_ptr) } {
+        Some(p) => p,
+        None => return NtStatus::InvalidParameter,
+    };
+    let out_phys = match unsafe { user_ptr_to_phys(out_handle_ptr) } {
+        Some(p) => p,
+        None => return NtStatus::InvalidParameter,
+    };
+
+    let path = unsafe { guest_cstr(path_phys, 128) };
+    let create = args[7] != 0;
+    let write_access = (args[1] & 0x4000_0000) != 0 || create;
+
+    match create_file(path, create, false, write_access) {
+        Ok(handle) => {
+            unsafe { core::ptr::write_volatile(out_phys as *mut u64, handle.0 as u64) };
+            NtStatus::Success
+        }
+        Err(status) => status,
+    }
+}
+
+fn handle_read_file(args: [usize; 16]) -> NtStatus {
+    let handle = FileHandle(args[0]);
+    let buf_ptr = args[2] as u64;
+    let len = args[4];
+    if buf_ptr == 0 || len == 0 {
+        return NtStatus::Success;
+    }
+    let buf_phys = match unsafe { user_ptr_to_phys(buf_ptr) } {
+        Some(p) => p,
+        None => return NtStatus::InvalidParameter,
+    };
+    let buf = unsafe { core::slice::from_raw_parts_mut(buf_phys as *mut u8, len) };
+    match read_file(handle, buf) {
+        Ok(_read) => NtStatus::Success,
+        Err(status) => status,
+    }
+}
+
+fn handle_write_file(args: [usize; 16]) -> NtStatus {
+    let handle = FileHandle(args[0]);
+    let buf_ptr = args[2] as u64;
+    let len = args[4];
+    if buf_ptr == 0 || len == 0 {
+        return NtStatus::Success;
+    }
+    let buf_phys = match unsafe { user_ptr_to_phys(buf_ptr) } {
+        Some(p) => p,
+        None => return NtStatus::InvalidParameter,
+    };
+    let buf = unsafe { core::slice::from_raw_parts(buf_phys as *const u8, len) };
+    match write_file(handle, buf) {
+        Ok(_written) => NtStatus::Success,
+        Err(status) => status,
+    }
 }
 
 fn handle_allocate_virtual_memory(args: [usize; 16]) -> NtStatus {
@@ -254,4 +325,32 @@ fn parent(path: &str) -> &str {
 
 fn file_name(path: &str) -> &str {
     path.rfind('/').map(|idx| &path[idx + 1..]).unwrap_or(path)
+}
+
+/// Translate a guest pointer to a physical address the kernel can read/write.
+///
+/// For interpreted threads the page-table root is zero and guest addresses
+/// are already physical. For native threads we walk the current process page
+/// table.
+unsafe fn user_ptr_to_phys(addr: u64) -> Option<u64> {
+    if addr == 0 {
+        return None;
+    }
+    let cr3 = crate::win32::scheduler::with_current_thread(|t| t.process_page_table_root)
+        .unwrap_or(0);
+    if cr3 == 0 {
+        return Some(addr);
+    }
+    let pt = crate::mm::page_table::page_table_root(cr3)?;
+    pt.translate(addr)
+}
+
+/// Read a null-terminated ASCII string of at most `max` bytes from `phys`.
+unsafe fn guest_cstr(phys: u64, max: usize) -> &'static str {
+    let mut len = 0usize;
+    let bytes = core::slice::from_raw_parts(phys as *const u8, max);
+    while len < max && bytes[len] != 0 {
+        len += 1;
+    }
+    core::str::from_utf8_unchecked(&bytes[..len])
 }

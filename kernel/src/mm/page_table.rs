@@ -107,6 +107,28 @@ mod x86_64_impl {
             self.root
         }
 
+        /// Translate a virtual address through this page table.
+        ///
+        /// Returns the physical address (including page offset) or `None` if
+        /// the virtual address is not mapped.
+        pub fn translate(&self, virt: u64) -> Option<u64> {
+            let pml4_index = ((virt >> 39) & 0x1FF) as usize;
+            let pdpt_index = ((virt >> 30) & 0x1FF) as usize;
+            let pd_index = ((virt >> 21) & 0x1FF) as usize;
+            let pt_index = ((virt >> 12) & 0x1FF) as usize;
+
+            let pdpt = Self::next_table(self.root, pml4_index, false)?;
+            let pd = Self::next_table(pdpt, pdpt_index, false)?;
+            let pt = Self::next_table(pd, pd_index, false)?;
+
+            let entries = pt as *const u64;
+            let entry = unsafe { entries.add(pt_index).read() };
+            if (entry & PAGE_PRESENT) == 0 {
+                return None;
+            }
+            Some((entry & !0xFFF) | (virt & 0xFFF))
+        }
+
         /// Return the physical address of the table referenced by `entry` in
         /// `table`, allocating and linking a new table if necessary.
         fn next_table(table: u64, index: usize, create: bool) -> Option<u64> {
@@ -156,16 +178,33 @@ impl PageTable {
         None
     }
 
-    pub unsafe fn map(&mut self, _virt: u64, _phys: u64, _flags: u64) -> bool {
+    pub unsafe fn map(
+        &mut self,
+        _virt: u64,
+        _phys: u64,
+        _flags: u64,
+    ) -> bool {
         false
     }
 
-    pub unsafe fn map_region(&mut self, _virt: u64, _phys: u64, _pages: usize, _flags: u64) -> bool {
+    pub unsafe fn map_region(
+        &mut self,
+        _virt: u64,
+        _phys: u64,
+        _pages: usize,
+        _flags: u64,
+    ) -> bool {
         false
     }
 
     pub fn cr3(&self) -> u64 {
         self.root
+    }
+
+    pub fn translate(&self,
+        _virt: u64,
+    ) -> Option<u64> {
+        None
     }
 }
 
