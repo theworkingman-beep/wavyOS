@@ -29,3 +29,30 @@ pub fn init() {
     registry::init();
     nt::init();
 }
+
+/// Load a small synthetic PE image to verify the loader and memory subsystem.
+///
+/// Must be called after the physical frame allocator and early heap have been
+/// initialized.
+pub fn self_test() {
+    let Some((handle, needs_translation)) = loader::load_pe(loader::MINIMAL_PE64, 1) else {
+        crate::logln!("win32: PE loader self-test FAILED.");
+        return;
+    };
+
+    let header = objects::lookup(handle);
+    let Some(header) = header else {
+        crate::logln!("win32: loaded process handle {} not found.", handle.0);
+        return;
+    };
+
+    let process = unsafe { &*(header.data as *const process::Process) };
+    crate::logln!(
+        "win32: PE loader self-test OK. pid={} image_base={:#x} image_size={:#x} entry={:#x} translation={}",
+        process.pid,
+        process.image_base,
+        process.image_size,
+        process.entry_point,
+        needs_translation
+    );
+}

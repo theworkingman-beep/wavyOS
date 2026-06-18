@@ -50,6 +50,8 @@ mod x86_64_entry {
             );
         }
 
+        kernel::win32::self_test();
+
         if let Some(fb) = boot_info.framebuffer.as_mut() {
             let info: kernel::boot_info::FrameBufferInfo = fb.info().into();
             let len = fb.buffer_mut().len();

@@ -12,6 +12,8 @@ pub struct Process {
     pub image_base: u64,
     /// Size of the mapped PE image.
     pub image_size: u64,
+    /// Absolute entry point address inside the mapped image.
+    pub entry_point: u64,
 }
 
 impl Process {
@@ -23,6 +25,7 @@ impl Process {
             root_handle: Handle(0),
             image_base: 0,
             image_size: 0,
+            entry_point: 0,
         }
     }
 }

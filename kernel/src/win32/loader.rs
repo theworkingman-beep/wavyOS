@@ -5,7 +5,15 @@
 
 pub use pe_parser::{parse_pe, parse_section_header, MachineType, PeImage, SectionHeader};
 
-use super::process::Process;
+use super::{objects, process::Process};
+use core::ptr;
+
+/// A minimal hand-crafted x86_64 PE executable used for loader self-tests.
+///
+/// It contains a single `.text` section with a two-byte `jmp $` loop mapped
+/// at RVA 0x1000. The image base is 0x1_4000_0000 and the total image size is
+/// 0x2000 bytes.
+pub static MINIMAL_PE64: &[u8] = include_bytes!("minimal_pe64.bin");
 
 /// Load a parsed PE image into a process address space.
 pub fn load_into_process(image: &PeImage, process: &mut Process, data: &[u8]) -> bool {
@@ -19,7 +27,7 @@ pub fn load_into_process(image: &PeImage, process: &mut Process, data: &[u8]) ->
 
     // Zero the allocated region before copying sections.
     unsafe {
-        core::ptr::write_bytes(base as *mut u8, 0, total_pages * 4096);
+        ptr::write_bytes(base as *mut u8, 0, total_pages * 4096);
     }
 
     // Copy each section from raw file offset to its virtual address.
@@ -31,9 +39,9 @@ pub fn load_into_process(image: &PeImage, process: &mut Process, data: &[u8]) ->
         map_section(process, &section, data, base);
     }
 
-    // Record the entry point relative to the new base.
+    // Record the absolute entry point inside the mapped image.
     let entry_rva = image.entry_point.saturating_sub(image.image_base);
-    process.teb_base = base + entry_rva;
+    process.entry_point = base + entry_rva;
 
     true
 }
@@ -48,7 +56,7 @@ fn map_section(process: &Process, section: &SectionHeader, data: &[u8], base: u6
 
     if src_offset + copy_size <= data.len() {
         unsafe {
-            core::ptr::copy_nonoverlapping(
+            ptr::copy_nonoverlapping(
                 data.as_ptr().add(src_offset),
                 dest as *mut u8,
                 copy_size,
@@ -59,7 +67,7 @@ fn map_section(process: &Process, section: &SectionHeader, data: &[u8], base: u6
     // Zero the remainder (BSS-style uninitialized data).
     if copy_size < virtual_size {
         unsafe {
-            core::ptr::write_bytes((dest + copy_size as u64) as *mut u8, 0, virtual_size - copy_size);
+            ptr::write_bytes((dest + copy_size as u64) as *mut u8, 0, virtual_size - copy_size);
         }
     }
 
@@ -82,6 +90,29 @@ fn allocate_contiguous(pages: usize) -> Option<u64> {
         last = frame;
     }
     Some(first)
+}
+
+/// Parse `data`, allocate a fresh process, and map the image into it.
+///
+/// Returns the object handle for the new process and whether the guest
+/// architecture requires binary translation on the host.
+pub fn load_pe(data: &[u8], pid: u64) -> Option<(objects::Handle, bool)> {
+    let image = parse_pe(data)?;
+
+    let size = core::mem::size_of::<Process>();
+    let align = core::mem::align_of::<Process>();
+    let ptr = crate::mm::alloc_early(size, align)? as *mut Process;
+
+    unsafe {
+        ptr::write(ptr, Process::new(pid));
+        if !load_into_process(&image, &mut *ptr, data) {
+            return None;
+        }
+    }
+
+    let needs_translation = requires_translation(image.machine);
+    let handle = objects::allocate(objects::ObjectKind::Process, ptr as *mut ())?;
+    Some((handle, needs_translation))
 }
 
 /// Determine if a guest PE architecture can run natively on the host.

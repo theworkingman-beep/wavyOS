@@ -179,4 +179,25 @@ mod tests {
         assert!(!image.is_dll);
         assert_eq!(image.num_sections, 1);
     }
+
+    /// Verify the kernel loader fixture parses and its single `.text` section
+    /// is described correctly.
+    #[test]
+    fn parses_kernel_loader_fixture() {
+        let data = include_bytes!("../../../kernel/src/win32/minimal_pe64.bin");
+        let image = parse_pe(data).expect("valid fixture PE64");
+        assert_eq!(image.machine, MachineType::Amd64);
+        assert_eq!(image.image_base, 0x1_4000_0000);
+        assert_eq!(image.entry_point, 0x1_4000_1000);
+        assert_eq!(image.image_size, 0x2000);
+        assert!(!image.is_dll);
+        assert_eq!(image.num_sections, 1);
+
+        let section = parse_section_header(data, image.section_table_offset).expect("text section");
+        assert_eq!(section.name_str(), ".text");
+        assert_eq!(section.virtual_address, 0x1000);
+        assert_eq!(section.virtual_size, 0x1000);
+        assert_eq!(section.raw_offset, 0x200);
+        assert_eq!(section.raw_size, 0x20);
+    }
 }
