@@ -83,6 +83,8 @@ pub unsafe extern "C" fn syscall_entry() {
         "push r14",
         "push r15",
         "push r12",          // user RSP
+        "push rcx",          // user RIP (SYSCALL saved it in RCX)
+        "push r11",          // user RFLAGS (SYSCALL saved it in R11)
         // Build args[0..6] from ABI registers before we overwrite them.
         "mov r13, rsi",      // r13 = arg1
         // rdi = arg0, rdx = arg2, r10 = arg3, r8 = arg4, r9 = arg5
@@ -109,6 +111,8 @@ pub unsafe extern "C" fn syscall_entry() {
         "mov rsi, rsp",
         "call {dispatch}",
         "add rsp, 128",
+        "pop r11",           // user RFLAGS
+        "pop rcx",           // user RIP
         "pop r12",           // user RSP
         "pop r15",
         "pop r14",

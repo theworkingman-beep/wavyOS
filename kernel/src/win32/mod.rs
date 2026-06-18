@@ -71,23 +71,24 @@ pub fn self_test() {
         needs_translation
     );
 
+    let slot = scheduler::create_thread(proc.pid, proc.entry_point, proc.page_table_root)
+        .expect("create initial thread for loaded process");
+    let thread = scheduler::thread(slot).expect("scheduled thread");
+    crate::logln!(
+        "win32: created thread tid={} entry={:#x} slot={} cr3={:#x} translation={}",
+        thread.tid,
+        thread.entry_point,
+        slot,
+        thread.process_page_table_root,
+        needs_translation
+    );
+
     if needs_translation {
         crate::logln!("win32: guest architecture differs from host; running interpreter.");
         unsafe {
-            abi::interpreter::run_x86_64_loop(proc.entry_point);
+            scheduler::enter_interpreter(slot);
         }
     } else {
-        let slot = scheduler::create_thread(proc.pid, proc.entry_point, proc.page_table_root)
-            .expect("create initial thread for loaded process");
-        let thread = scheduler::thread(slot).expect("scheduled thread");
-        crate::logln!(
-            "win32: entering user mode for thread tid={} entry={:#x} slot={} cr3={:#x}",
-            thread.tid,
-            thread.entry_point,
-            slot,
-            thread.process_page_table_root
-        );
-
         #[cfg(feature = "arch_x86_64")]
         unsafe {
             scheduler::enter_user_mode(slot);

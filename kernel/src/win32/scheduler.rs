@@ -49,25 +49,33 @@ pub fn create_thread(
     let kstack_top = kstack_base + kstack_size as u64;
     let initial_rsp = crate::arch::context_switch::initial_stack(entry_point, kstack_top);
 
-    // User stack used when the thread runs in ring-3. Map it at a fixed
-    // virtual address in the per-process page table.
+    // User stack used when the thread runs in ring-3. For native threads map
+    // it at a fixed virtual address in the per-process page table; for
+    // interpreter threads the kernel accesses the guest stack directly as a
+    // physical address.
     const USER_STACK_VIRT: u64 = 0x0000_0000_0007_0000;
     let ustack_base = crate::mm::alloc_early(USER_STACK_SIZE, 4096)? as u64;
-    let ustack_top = USER_STACK_VIRT + USER_STACK_SIZE as u64;
-    if let Some(mut pt) = unsafe { page_table_root(cr3) } {
-        let pages = USER_STACK_SIZE / 4096;
-        let flags = PAGE_PRESENT | PAGE_USER | PAGE_WRITABLE;
-        unsafe {
-            pt.map_region(USER_STACK_VIRT, ustack_base, pages, flags);
+    let ustack_top = ustack_base + USER_STACK_SIZE as u64;
+    let user_rsp = if cr3 == 0 {
+        ustack_top
+    } else {
+        if let Some(mut pt) = unsafe { page_table_root(cr3) } {
+            let pages = USER_STACK_SIZE / 4096;
+            let flags = PAGE_PRESENT | PAGE_USER | PAGE_WRITABLE;
+            unsafe {
+                pt.map_region(USER_STACK_VIRT, ustack_base, pages, flags);
+            }
         }
-    }
+        USER_STACK_VIRT + USER_STACK_SIZE as u64
+    };
 
     let tid = NEXT_TID.fetch_add(1, Ordering::Relaxed);
     let mut thread = Thread::new(tid, pid, entry_point);
     thread.stack_base = kstack_base;
     thread.stack_limit = kstack_base;
     thread.rsp = initial_rsp;
-    thread.user_rsp = ustack_top;
+    thread.user_rsp = user_rsp;
+    thread.user_rip = entry_point;
     thread.process_page_table_root = cr3;
     thread.state = ThreadState::Ready;
 
@@ -129,6 +137,21 @@ where
     let slot = slot?;
     let t = thread_mut(slot)?;
     Some(f(t))
+}
+
+/// Start running `slot` under the x86_64 interpreter.
+///
+/// # Safety
+/// Must only be used for threads whose guest architecture differs from the
+/// host. Does not return.
+pub unsafe fn enter_interpreter(slot: usize) -> ! {
+    let Some(t) = thread_mut(slot) else {
+        crate::logln!("scheduler: cannot enter interpreter for missing slot {}", slot);
+        crate::hlt();
+    };
+    t.state = ThreadState::Running;
+    *CURRENT_THREAD.lock() = Some(slot);
+    crate::win32::abi::interpreter::run_x86_64_loop(t.entry_point);
 }
 
 /// Switch to the next ready thread, saving the current context.
