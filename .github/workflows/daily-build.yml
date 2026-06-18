@@ -126,31 +126,31 @@ jobs:
           name: aperture-os-aarch64-boot-image
           path: release/
 
-      - name: Compute nightly date
-        id: date
+      - name: Compute nightly timestamp
+        id: ts
         run: |
-          RELEASE_DATE="$(date -u +%Y-%m-%d)"
-          echo "date=${RELEASE_DATE}" >> "$GITHUB_OUTPUT"
+          RELEASE_TS="$(date -u +%Y-%m-%d-%H%M%S)"
+          echo "ts=${RELEASE_TS}" >> "$GITHUB_OUTPUT"
 
-      - name: Rename assets with date
+      - name: Rename assets with timestamp
         run: |
-          mv release/aperture.iso "release/aperture-os-x86_64-${RELEASE_DATE}.iso"
-          mv release/kernel "release/aperture-os-aarch64-${RELEASE_DATE}.elf"
-          mv release/aperture-aarch64.iso "release/aperture-os-aarch64-${RELEASE_DATE}.iso"
+          mv release/aperture.iso "release/aperture-os-x86_64-${RELEASE_TS}.iso"
+          mv release/kernel "release/aperture-os-aarch64-${RELEASE_TS}.elf"
+          mv release/aperture-aarch64.iso "release/aperture-os-aarch64-${RELEASE_TS}.iso"
         env:
-          RELEASE_DATE: ${{ steps.date.outputs.date }}
+          RELEASE_TS: ${{ steps.ts.outputs.ts }}
 
       - name: Create nightly release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: nightly-${{ steps.date.outputs.date }}
-          name: Aperture OS nightly ${{ steps.date.outputs.date }}
+          tag_name: nightly-${{ steps.ts.outputs.ts }}
+          name: Aperture OS nightly ${{ steps.ts.outputs.ts }}
           body: |
             Automated daily build of Aperture OS.
 
             Assets:
-            - `aperture-os-x86_64-${{ steps.date.outputs.date }}.iso` — hybrid BIOS+UEFI bootable ISO
-            - `aperture-os-aarch64-${{ steps.date.outputs.date }}.iso` — AArch64 UEFI bootable ISO
-            - `aperture-os-aarch64-${{ steps.date.outputs.date }}.elf` — AArch64 kernel ELF
+            - `aperture-os-x86_64-${{ steps.ts.outputs.ts }}.iso` — hybrid BIOS+UEFI bootable ISO
+            - `aperture-os-aarch64-${{ steps.ts.outputs.ts }}.iso` — AArch64 UEFI bootable ISO
+            - `aperture-os-aarch64-${{ steps.ts.outputs.ts }}.elf` — AArch64 kernel ELF
           files: release/*
           prerelease: true
