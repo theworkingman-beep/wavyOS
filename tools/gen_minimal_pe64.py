@@ -69,6 +69,32 @@ def build_code() -> bytes:
     close_xor_rdi_offset = len(code) - 4
     code += b"\x0F\x05"                      # syscall
 
+    # NtQuerySystemInformation(SystemBasicInformation, buf, 64, 0)
+    code += b"\xB8\x36\x00\x00\x00"          # mov eax, 0x36
+    code += b"\x48\x31\xFF"                  # xor rdi, rdi (class 0)
+    code += b"\x48\x8D\x35" + struct.pack("<i", 0)  # lea rsi, [rip+disp] placeholder
+    sysinfo_lea_rsi_offset = len(code) - 4
+    code += b"\xBA\x40\x00\x00\x00"          # mov edx, 64
+    code += b"\x4D\x31\xD2"                  # xor r10, r10 (return-length ptr = null)
+    code += b"\x0F\x05"                      # syscall
+
+    # NtQueryInformationProcess(-1, ProcessBasicInformation, buf, 48, 0)
+    code += b"\xB8\x19\x00\x00\x00"          # mov eax, 0x19
+    code += b"\x48\xC7\xC7\xFF\xFF\xFF\xFF"  # mov rdi, -1 (NtCurrentProcess)
+    code += b"\x48\x31\xF6"                  # xor rsi, rsi (class 0)
+    code += b"\x48\x8D\x15" + struct.pack("<i", 0)  # lea rdx, [rip+disp] placeholder
+    procinfo_lea_rdx_offset = len(code) - 4
+    code += b"\x49\xC7\xC2\x30\x00\x00\x00"  # mov r10, 48
+    code += b"\x4D\x31\xC0"                  # xor r8, r8 (return-length ptr = null)
+    code += b"\x0F\x05"                      # syscall
+
+    # NtDelayExecution(FALSE, interval)
+    code += b"\xB8\x34\x00\x00\x00"          # mov eax, 0x34
+    code += b"\x48\x31\xFF"                  # xor rdi, rdi (alertable = FALSE)
+    code += b"\x48\x8D\x35" + struct.pack("<i", 0)  # lea rsi, [rip+disp] placeholder
+    delay_lea_rsi_offset = len(code) - 4
+    code += b"\x0F\x05"                      # syscall
+
     code += b"\xC3"                          # ret
 
     # Pad to 8-byte alignment for the data slots.
@@ -80,6 +106,15 @@ def build_code() -> bytes:
 
     handle_slot = len(code)
     code += struct.pack("<Q", 0)             # handle_slot: dq 0
+
+    sysinfo_slot = len(code)
+    code += b"\x00" * 64                     # sysinfo_slot: 64-byte buffer
+
+    procinfo_slot = len(code)
+    code += b"\x00" * 48                     # procinfo_slot: 48-byte buffer
+
+    delay_slot = len(code)
+    code += struct.pack("<q", -10000)        # delay_slot: 1 ms relative interval
 
     path = b"/bin/hello.txt\x00"
     path_offset = len(code)
@@ -100,6 +135,9 @@ def build_code() -> bytes:
     patch(create_lea_rdi_offset, handle_slot, 7)
     patch(create_lea_rsi_offset, path_offset, 7)
     patch(write_lea_rsi_offset, msg_offset, 7)
+    patch(sysinfo_lea_rsi_offset, sysinfo_slot, 7)
+    patch(procinfo_lea_rdx_offset, procinfo_slot, 7)
+    patch(delay_lea_rsi_offset, delay_slot, 7)
 
     # XOR r/m64, r64 with RIP-relative addressing is 7 bytes too.
     patch(write_xor_rdi_offset, handle_slot, 7)

@@ -139,6 +139,12 @@ where
     Some(f(t))
 }
 
+/// Yield the current thread to the next ready thread. Safe to call from a
+/// syscall handler because scheduler locks are used internally.
+pub fn yield_current() {
+    unsafe { schedule() };
+}
+
 /// Called from the x86_64 timer interrupt handler with the current kernel
 /// stack pointer. Saves it as the interrupted thread's interrupt frame,
 /// selects the next ready thread, and returns the new thread's interrupt

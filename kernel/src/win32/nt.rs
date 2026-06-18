@@ -113,6 +113,9 @@ pub fn init_syscall_table() {
             (SyscallNumber::NtWriteFile, handle_write_file),
             (SyscallNumber::NtAllocateVirtualMemory, handle_allocate_virtual_memory),
             (SyscallNumber::NtFreeVirtualMemory, handle_free_virtual_memory),
+            (SyscallNumber::NtQuerySystemInformation, handle_query_system_information),
+            (SyscallNumber::NtQueryInformationProcess, handle_query_information_process),
+            (SyscallNumber::NtDelayExecution, handle_delay_execution),
         );
     }
 }
@@ -235,6 +238,116 @@ fn handle_free_virtual_memory(args: [usize; 16]) -> NtStatus {
     let base = args[0] as u64;
     let size = args[1];
     free_virtual_memory(base, size)
+}
+
+fn handle_query_system_information(args: [usize; 16]) -> NtStatus {
+    // Windows x64 ABI: RDI=class, RSI=buffer, RDX=length, R10=return-length ptr.
+    let class = args[0] as u32;
+    let buf_ptr = args[1] as u64;
+    let len = args[2];
+    let ret_len_ptr = args[3] as u64;
+
+    if buf_ptr == 0 || len == 0 {
+        return NtStatus::InvalidParameter;
+    }
+    let buf_phys = match unsafe { user_ptr_to_phys(buf_ptr) } {
+        Some(p) => p,
+        None => return NtStatus::InvalidParameter,
+    };
+    let buf = unsafe { core::slice::from_raw_parts_mut(buf_phys as *mut u8, len) };
+
+    match class {
+        // SystemBasicInformation
+        0 => {
+            if len < 64 {
+                return NtStatus::BufferTooSmall;
+            }
+            let page_size: u32 = 4096;
+            let phys_pages: u32 = 0x8000; // 128 MiB worth of 4 KiB pages (placeholder)
+            buf[0..4].copy_from_slice(&page_size.to_le_bytes());
+            buf[4..8].copy_from_slice(&phys_pages.to_le_bytes());
+            // Zero the rest; the Windows struct has many more fields.
+            buf[8..64].fill(0);
+            if ret_len_ptr != 0 {
+                if let Some(p) = unsafe { user_ptr_to_phys(ret_len_ptr) } {
+                    unsafe { core::ptr::write_volatile(p as *mut u32, 64) };
+                }
+            }
+            NtStatus::Success
+        }
+        // SystemProcessorInformation
+        1 => {
+            if len < 2 {
+                return NtStatus::BufferTooSmall;
+            }
+            // ProcessorArchitecture: AMD64 = 9, ARM64 = 12.
+            let arch: u16 = 12;
+            buf[0..2].copy_from_slice(&arch.to_le_bytes());
+            if ret_len_ptr != 0 {
+                if let Some(p) = unsafe { user_ptr_to_phys(ret_len_ptr) } {
+                    unsafe { core::ptr::write_volatile(p as *mut u32, 2) };
+                }
+            }
+            NtStatus::Success
+        }
+        _ => NtStatus::NotImplemented,
+    }
+}
+
+fn handle_query_information_process(args: [usize; 16]) -> NtStatus {
+    // Windows x64 ABI: RDI=handle, RSI=class, RDX=buffer, R10=length, R8=return-length ptr.
+    let _handle = args[0] as u64;
+    let class = args[1] as u32;
+    let buf_ptr = args[2] as u64;
+    let len = args[3];
+    let ret_len_ptr = args[4] as u64;
+
+    if buf_ptr == 0 || len == 0 {
+        return NtStatus::InvalidParameter;
+    }
+    let buf_phys = match unsafe { user_ptr_to_phys(buf_ptr) } {
+        Some(p) => p,
+        None => return NtStatus::InvalidParameter,
+    };
+
+    match class {
+        // ProcessBasicInformation
+        0 => {
+            if len < 48 {
+                return NtStatus::BufferTooSmall;
+            }
+            let buf = unsafe { core::slice::from_raw_parts_mut(buf_phys as *mut u8, 48) };
+            let pid: u64 = 1;
+            buf[0..8].copy_from_slice(&pid.to_le_bytes()); // UniqueProcessId
+            buf[8..48].fill(0);
+            if ret_len_ptr != 0 {
+                if let Some(p) = unsafe { user_ptr_to_phys(ret_len_ptr) } {
+                    unsafe { core::ptr::write_volatile(p as *mut u32, 48) };
+                }
+            }
+            NtStatus::Success
+        }
+        _ => NtStatus::NotImplemented,
+    }
+}
+
+fn handle_delay_execution(args: [usize; 16]) -> NtStatus {
+    // Windows x64 ABI: RDI=Alertable, RSI=DelayInterval (LARGE_INTEGER*)
+    let _alertable = args[0] != 0;
+    let interval_ptr = args[1] as u64;
+    let _interval = if interval_ptr != 0 {
+        if let Some(p) = unsafe { user_ptr_to_phys(interval_ptr) } {
+            unsafe { core::ptr::read_volatile(p as *const i64) }
+        } else {
+            0
+        }
+    } else {
+        0
+    };
+    // Cooperative yield. A real implementation would program a timer and
+    // block the thread, but the baseline scheduler only supports round-robin.
+    crate::win32::scheduler::yield_current();
+    NtStatus::Success
 }
 
 /// Open or create a file and return an object-manager handle.
