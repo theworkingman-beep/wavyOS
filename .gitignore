@@ -1,22 +1,17 @@
 # Rust build artifacts
-/target
-**/target
-**/*.rs.bk
+target/
+Cargo.lock
 
-# Cargo lockfiles inside workspace members (kept only at workspace root)
-/kernel/Cargo.lock
-/tools/*/Cargo.lock
+# Python cache
+tools/__pycache__/
+*.pyc
 
-# IDE
-.idea/
+# Editor artifacts
 .vscode/
+.idea/
 *.swp
 *.swo
 *~
 
-# OS
+# OS files
 .DS_Store
-Thumbs.db
-
-# Claude Code
-.claude/
