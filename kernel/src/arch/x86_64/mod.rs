@@ -26,6 +26,16 @@ pub fn debug_putchar(byte: u8) {
     }
 }
 
+/// Return the current mouse cursor position.
+pub fn mouse_position() -> (i32, i32) {
+    interrupts::mouse_position()
+}
+
+/// Return the current mouse button state.
+pub fn mouse_buttons() -> u8 {
+    interrupts::mouse_buttons()
+}
+
 /// Halt the CPU until the next interrupt, then return.
 pub fn halt_once() {
     x86_64::instructions::hlt();

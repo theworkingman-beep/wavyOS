@@ -9,12 +9,13 @@ use spin::Mutex;
 pub mod color;
 pub mod compositor;
 pub mod cursor;
+pub mod desktop;
 pub mod font;
 
 pub use compositor::WindowId;
-use compositor::Compositor;
+pub(crate) use compositor::Compositor;
 
-static COMPOSITOR: Mutex<Option<Compositor>> = Mutex::new(None);
+pub(crate) static COMPOSITOR: Mutex<Option<Compositor>> = Mutex::new(None);
 
 /// Initialize the GUI with the bootloader-provided framebuffer.
 pub fn init() {
@@ -34,11 +35,8 @@ pub fn init_compositor(buffer: &'static mut [u8], info: FrameBufferInfo) {
 pub fn render() {
     if let Some(c) = COMPOSITOR.lock().as_mut() {
         c.render();
-        #[cfg(feature = "arch_x86_64")]
-        {
-            let (mx, my) = crate::arch::x86_64::interrupts::mouse_position();
-            cursor::draw_cursor(c, mx, my);
-        }
+        let (mx, my) = crate::arch::mouse_position();
+        cursor::draw_cursor(c, mx, my);
     }
 }
 
