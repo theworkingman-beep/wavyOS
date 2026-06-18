@@ -1,0 +1,9 @@
+[package]
+name = "aarch64-decode"
+version = "0.1.0"
+edition = "2021"
+description = "Minimal no_std AArch64 instruction decoder for Aperture OS binary translation."
+
+[dependencies]
+
+[dev-dependencies]
