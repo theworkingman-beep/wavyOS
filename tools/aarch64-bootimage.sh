@@ -18,6 +18,8 @@ for tool in curl tar xorriso; do
     fi
 done
 
+CURL="curl -fsSL --max-time 120 --retry 3 --retry-delay 2"
+
 if [[ ! -f "$KERNEL_ELF" ]]; then
     echo "Error: kernel ELF not found: $KERNEL_ELF" >&2
     exit 1
@@ -28,7 +30,7 @@ mkdir -p "$LIMINE_DIR"
 # Download the Limine binary release if we don't already have it.
 if [[ ! -f "$LIMINE_DIR/BOOTAA64.EFI" ]]; then
     echo "Downloading Limine v${LIMINE_VERSION} binaries..."
-    curl -fsSL "$LIMINE_URL" | tar -xJf - -C "$LIMINE_DIR" --strip-components=1
+    $CURL "$LIMINE_URL" | tar -xJf - -C "$LIMINE_DIR" --strip-components=1
 fi
 
 STAGE_DIR="target/aarch64-iso-staging"

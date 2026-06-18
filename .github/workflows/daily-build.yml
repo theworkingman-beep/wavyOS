@@ -26,10 +26,16 @@ jobs:
         with:
           components: rust-src, llvm-tools-preview
 
+      - name: Cache Limine binaries
+        uses: actions/cache@v4
+        with:
+          path: tools/limine-cache
+          key: limine-12.3.3
+
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 xorriso util-linux
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 xorriso util-linux
 
       - name: Build x86_64 kernel and boot images
         run: ./build.sh x86_64
@@ -38,7 +44,7 @@ jobs:
         run: ./build-iso.sh
 
       - name: Run host tests
-        run: cargo test -p x86-decode && cargo test -p pe-parser
+        run: cargo test -p x86-decode -p pe-parser -p aarch64-decode
 
       - name: Upload x86_64 boot images
         uses: actions/upload-artifact@v4
@@ -68,16 +74,22 @@ jobs:
         with:
           components: rust-src, llvm-tools-preview
 
+      - name: Cache Limine binaries
+        uses: actions/cache@v4
+        with:
+          path: tools/limine-cache
+          key: limine-12.3.3
+
       - name: Install AArch64 build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu qemu-system-arm xorriso
+          sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu xorriso
 
       - name: Build AArch64 kernel and boot image
         run: ARCH=aarch64 ./build.sh
 
       - name: Run host tests
-        run: cargo test -p x86-decode && cargo test -p pe-parser
+        run: cargo test -p x86-decode -p pe-parser -p aarch64-decode
 
       - name: Upload AArch64 kernel ELF
         uses: actions/upload-artifact@v4
