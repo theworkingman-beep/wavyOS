@@ -77,6 +77,12 @@ impl SyscallNumber {
     }
 }
 
+impl From<usize> for SyscallNumber {
+    fn from(value: usize) -> Self {
+        Self::from_raw(value).unwrap_or(Self::NtWaitForMultipleObjects)
+    }
+}
+
 /// Syscall dispatch table entry.
 #[derive(Clone, Copy)]
 struct SyscallHandler {

@@ -93,4 +93,40 @@ pub fn self_test() {
 
         crate::logln!("win32: returned to idle after scheduling.");
     }
+
+    // Exercise the in-kernel NT syscall dispatch table directly (without a
+    // real user-mode trap) to confirm the implementation functions.
+    let mut base = 0u64;
+    let status = nt::dispatch(
+        nt::SyscallNumber::NtAllocateVirtualMemory,
+        [
+            &mut base as *mut u64 as usize,
+            0x1000,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        ],
+    );
+    crate::logln!(
+        "win32: NtAllocateVirtualMemory dispatch status={:#x} base={:#x}",
+        status as u32,
+        base
+    );
+
+    let status = nt::dispatch(nt::SyscallNumber::NtClose, [0; 16]);
+    crate::logln!("win32: NtClose(0) dispatch status={:#x}", status as u32);
+
+    let status = nt::dispatch(nt::SyscallNumber::NtCreateFile, [0; 16]);
+    crate::logln!("win32: NtCreateFile dispatch status={:#x}", status as u32);
 }
