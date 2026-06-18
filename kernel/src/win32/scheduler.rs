@@ -181,7 +181,10 @@ pub extern "C" fn preempt(interrupt_rsp: u64) -> u64 {
 
     let kstack_top = next.stack_base + crate::arch::context_switch::stack_size() as u64;
     unsafe {
+        #[cfg(feature = "arch_x86_64")]
         crate::arch::x86_64::gdt::set_rsp0(kstack_top);
+        #[cfg(feature = "arch_aarch64")]
+        crate::arch::aarch64::gdt::set_rsp0(kstack_top);
     }
 
     next.interrupt_rsp
@@ -270,6 +273,8 @@ pub unsafe fn enter_user_mode(slot: usize) -> ! {
     unsafe {
         crate::arch::x86_64::gdt::set_rsp0(kstack_top);
     }
+    // The AArch64 path is already gated by #[cfg(feature = "arch_x86_64")] on
+    // this function, so the above call is always valid inside it.
 
     // Push a return address onto the user stack so that when the PE's entry
     // function returns it lands in thread_exit instead of jumping to garbage.
