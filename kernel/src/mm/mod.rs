@@ -4,6 +4,8 @@
 //! allocator for early kernel heap use. A proper page allocator will replace
 //! the bump allocator once the MMU is configured per-architecture.
 
+pub mod frame_allocator;
+
 use crate::boot_info::{MemoryRegion, MemoryRegionKind};
 use core::sync::atomic::{AtomicUsize, Ordering};
 use spin::Mutex;
@@ -71,4 +73,12 @@ pub fn count_usable_frames(regions: &[MemoryRegion]) -> usize {
 /// Return the number of usable 4 KiB frames.
 pub fn total_frames() -> usize {
     TOTAL_FRAMES.load(Ordering::Relaxed)
+}
+
+/// Initialize physical frame allocation from the bootloader memory map.
+///
+/// # Safety
+/// The memory map must describe the real physical memory layout.
+pub unsafe fn init_physical_allocator(regions: &[MemoryRegion]) {
+    frame_allocator::init(regions);
 }

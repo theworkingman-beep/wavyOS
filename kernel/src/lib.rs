@@ -1,5 +1,6 @@
 #![no_std]
-#![cfg_attr(test, no_main)]
+#![cfg_attr(all(feature = "arch_x86_64", test), no_main)]
+#![cfg_attr(feature = "arch_x86_64", feature(abi_x86_interrupt))]
 
 pub mod arch;
 pub mod boot_info;

@@ -27,6 +27,19 @@ mod x86_64_entry {
                 break;
             }
         }
+        let mut regions = [kernel::boot_info::MemoryRegion::default(); 64];
+        let mut region_count = 0usize;
+        for region in boot_info.memory_regions.iter() {
+            if region_count < regions.len() {
+                regions[region_count] = (*region).into();
+                region_count += 1;
+            }
+        }
+        unsafe {
+            kernel::mm::init_physical_allocator(&regions[..region_count]);
+        }
+        kernel::logln!("Physical frame allocator initialized.");
+
         if let Some(region) = usable {
             kernel::mm::init_heap(region.start, region.end);
             kernel::logln!(

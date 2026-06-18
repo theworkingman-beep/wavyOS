@@ -2,9 +2,11 @@
 
 use x86_64::instructions::port::Port;
 
+pub mod interrupts;
+
 /// Initialize x86_64-specific hardware.
 pub fn init() {
-    // TODO: configure PIC/APIC, enable MMU, load GDT/IDT.
+    interrupts::init();
 }
 
 /// Output a single byte to the debug serial port (0x3F8 COM1).

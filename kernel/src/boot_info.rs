@@ -12,6 +12,16 @@ pub struct MemoryRegion {
     pub kind: MemoryRegionKind,
 }
 
+impl Default for MemoryRegion {
+    fn default() -> Self {
+        Self {
+            start: 0,
+            end: 0,
+            kind: MemoryRegionKind::Reserved,
+        }
+    }
+}
+
 /// Kind of memory region.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MemoryRegionKind {
