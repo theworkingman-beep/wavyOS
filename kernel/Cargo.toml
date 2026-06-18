@@ -9,3 +9,8 @@ bootloader_api = "0.11.9"
 spin = "0.10.0"
 x86_64 = "0.15.2"
 uart_16550 = "0.3.2"
+
+[features]
+default = ["arch_x86_64"]
+arch_x86_64 = []
+arch_aarch64 = []

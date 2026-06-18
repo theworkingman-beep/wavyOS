@@ -3,39 +3,6 @@
 
 use bootloader_api::config::Mapping;
 use bootloader_api::{entry_point, BootInfo, BootloaderConfig};
-use core::fmt::Write;
-use core::panic::PanicInfo;
-use spin::Mutex;
-use uart_16550::SerialPort;
-
-pub static SERIAL1: Mutex<Option<SerialPort>> = Mutex::new(None);
-
-pub fn init_serial() {
-    let mut serial = unsafe { SerialPort::new(0x3F8) };
-    serial.init();
-    *SERIAL1.lock() = Some(serial);
-}
-
-pub fn serial_print(args: core::fmt::Arguments) {
-    if let Some(serial) = SERIAL1.lock().as_mut() {
-        let _ = serial.write_fmt(args);
-    }
-}
-
-#[macro_export]
-macro_rules! serial_print {
-    ($($arg:tt)*) => {
-        $crate::serial_print(format_args!($($arg)*));
-    };
-}
-
-#[macro_export]
-macro_rules! serial_println {
-    () => ($crate::serial_print!("\n"));
-    ($fmt:expr) => ($crate::serial_print!(concat!($fmt, "\n")));
-    ($fmt:expr, $($arg:tt)*) => ($crate::serial_print!(
-        concat!($fmt, "\n"), $($arg)*));
-}
 
 pub static BOOTLOADER_CONFIG: BootloaderConfig = {
     let mut config = BootloaderConfig::new_default();
@@ -45,44 +12,53 @@ pub static BOOTLOADER_CONFIG: BootloaderConfig = {
 };
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
-    init_serial();
+    kernel::init();
 
-    serial_println!("Aperture OS kernel booting...");
-    serial_println!("Bootloader API version: {:?}", boot_info.api_version);
+    kernel::logln!("Aperture OS kernel booting...");
+    kernel::logln!("Bootloader API version: {:?}", boot_info.api_version);
 
-    // Draw a simple color to the framebuffer so we can see the GUI is alive.
-    if let Some(fb) = boot_info.framebuffer.as_mut() {
-        let info = fb.info();
-        let width = info.width;
-        let height = info.height;
-        let bytes_per_pixel = info.bytes_per_pixel as usize;
-        let stride = info.stride;
-        let buffer = fb.buffer_mut();
-
-        serial_println!("Framebuffer: {}x{} stride={} bpp={}", width, height, stride, bytes_per_pixel);
-
-        for y in 0..height {
-            for x in 0..width {
-                let offset = (y * stride + x) * bytes_per_pixel;
-                let color = if x < width / 2 && y < height / 2 {
-                    [0x00, 0x40, 0x80, 0x00] // teal-ish
-                } else if x >= width / 2 && y < height / 2 {
-                    [0x40, 0x00, 0x80, 0x00] // purple-ish
-                } else if x < width / 2 {
-                    [0x80, 0x40, 0x00, 0x00] // orange-ish
-                } else {
-                    [0x20, 0x20, 0x20, 0x00] // gray
-                };
-                buffer[offset..offset + bytes_per_pixel]
-                    .copy_from_slice(&color[..bytes_per_pixel]);
-            }
+    // Initialize memory manager with the first usable region.
+    let mut usable: Option<bootloader_api::info::MemoryRegion> = None;
+    for region in boot_info.memory_regions.iter() {
+        if region.kind == bootloader_api::info::MemoryRegionKind::Usable && region.end - region.start >= 0x10_0000 {
+            usable = Some(*region);
+            break;
         }
-        serial_println!("Framebuffer initialized.");
-    } else {
-        serial_println!("No framebuffer available.");
+    }
+    if let Some(region) = usable {
+        kernel::mm::init_heap(region.start, region.end);
+        kernel::logln!(
+            "Early heap: {:#x} - {:#x} ({} MiB)",
+            region.start,
+            region.end,
+            (region.end - region.start) / 1024 / 1024
+        );
     }
 
-    serial_println!("Kernel idle.");
+    // Initialize GUI compositor from the bootloader framebuffer.
+    if let Some(fb) = boot_info.framebuffer.as_mut() {
+        let info = fb.info();
+        let buffer = fb.buffer_mut();
+        let len = buffer.len();
+        let static_buffer = unsafe { core::slice::from_raw_parts_mut(buffer.as_mut_ptr(), len) };
+        kernel::gui::init_compositor(static_buffer, info);
+
+        // Create a small demo window.
+        let _win = kernel::gui::create_window("Aperture", 100, 100, 320, 240);
+
+        kernel::gui::render();
+        kernel::logln!(
+            "Framebuffer: {}x{} stride={} bpp={}",
+            info.width,
+            info.height,
+            info.stride,
+            info.bytes_per_pixel
+        );
+    } else {
+        kernel::logln!("No framebuffer available.");
+    }
+
+    kernel::logln!("Kernel idle.");
     loop {
         x86_64::instructions::hlt();
     }
@@ -90,10 +66,3 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
 
 entry_point!(kernel_main, config = &BOOTLOADER_CONFIG);
 
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    serial_println!("PANIC: {}", info);
-    loop {
-        x86_64::instructions::hlt();
-    }
-}
