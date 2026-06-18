@@ -4,10 +4,14 @@ use x86_64::instructions::port::Port;
 
 pub mod context_switch;
 pub mod interrupts;
+pub mod syscall;
 
 /// Initialize x86_64-specific hardware.
 pub fn init() {
     interrupts::init();
+    unsafe {
+        syscall::init();
+    }
 }
 
 /// Output a single byte to the debug serial port (0x3F8 COM1).
