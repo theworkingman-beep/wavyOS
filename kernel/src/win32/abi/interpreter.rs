@@ -181,7 +181,7 @@ fn execute_instruction(t: &mut Thread, pc: u64, code: &[u8]) -> Option<u64> {
             }
             Some(pc.wrapping_add(len as u64))
         }
-        // XOR r/m64, r64 (31 /r)
+        // XOR r/m64, r64 (31 /r): destination is r/m, source is reg.
         0x31 => {
             if pos >= code.len() {
                 return None;
@@ -200,6 +200,29 @@ fn execute_instruction(t: &mut Thread, pc: u64, code: &[u8]) -> Option<u64> {
                 Operand::Addr(a) => {
                     let val = unsafe { read_u64(a) } ^ t.read_reg(src);
                     unsafe { write_u64(a, val) };
+                }
+            }
+            Some(pc.wrapping_add(len as u64))
+        }
+        // XOR r64, r/m64 (33 /r): destination is reg, source is r/m.
+        0x33 => {
+            if pos >= code.len() {
+                return None;
+            }
+            let modrm = code[pos];
+            pos += 1;
+            let (mod_bits, reg_field, rm) = decode_modrm(modrm);
+            let dst = gpr(reg_field, rex_r);
+            let (new_pos, src) = decode_modrm_operand(t, pc, pos, code, mod_bits, rm, rex_b, rex_x, rex_r)?;
+            let len = new_pos;
+            match src {
+                Operand::Reg(r) => {
+                    let val = t.read_reg(dst) ^ t.read_reg(r);
+                    t.write_reg(dst, val);
+                }
+                Operand::Addr(a) => {
+                    let val = t.read_reg(dst) ^ unsafe { read_u64(a) };
+                    t.write_reg(dst, val);
                 }
             }
             Some(pc.wrapping_add(len as u64))

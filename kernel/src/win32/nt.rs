@@ -138,11 +138,13 @@ fn handle_close(args: [usize; 16]) -> NtStatus {
 }
 
 fn handle_create_file(args: [usize; 16]) -> NtStatus {
-    // Simplified ABI for bring-up tests: args[2] is a pointer to a
-    // null-terminated path, args[7] is create disposition (nonzero = create),
-    // args[1] is access mask (GENERIC_WRITE bit enables writing).
-    let path_ptr = args[2] as u64;
+    // Simplified bring-up ABI (not the full Windows NtCreateFile signature):
+    //   args[0] = pointer to u64 that receives the handle
+    //   args[1] = pointer to null-terminated path
+    //   args[2] = create disposition (nonzero = create)
+    //   args[3] = access mask (write bit enables writing)
     let out_handle_ptr = args[0] as u64;
+    let path_ptr = args[1] as u64;
     if path_ptr == 0 || out_handle_ptr == 0 {
         return NtStatus::InvalidParameter;
     }
@@ -157,8 +159,8 @@ fn handle_create_file(args: [usize; 16]) -> NtStatus {
     };
 
     let path = unsafe { guest_cstr(path_phys, 128) };
-    let create = args[7] != 0;
-    let write_access = (args[1] & 0x4000_0000) != 0 || create;
+    let create = args[2] != 0;
+    let write_access = (args[3] & 0x4000_0000) != 0 || create;
 
     match create_file(path, create, false, write_access) {
         Ok(handle) => {
@@ -170,9 +172,13 @@ fn handle_create_file(args: [usize; 16]) -> NtStatus {
 }
 
 fn handle_read_file(args: [usize; 16]) -> NtStatus {
+    // Simplified bring-up ABI:
+    //   args[0] = handle
+    //   args[1] = buffer pointer
+    //   args[2] = length
     let handle = FileHandle(args[0]);
-    let buf_ptr = args[2] as u64;
-    let len = args[4];
+    let buf_ptr = args[1] as u64;
+    let len = args[2];
     if buf_ptr == 0 || len == 0 {
         return NtStatus::Success;
     }
@@ -188,9 +194,13 @@ fn handle_read_file(args: [usize; 16]) -> NtStatus {
 }
 
 fn handle_write_file(args: [usize; 16]) -> NtStatus {
+    // Simplified bring-up ABI:
+    //   args[0] = handle
+    //   args[1] = buffer pointer
+    //   args[2] = length
     let handle = FileHandle(args[0]);
-    let buf_ptr = args[2] as u64;
-    let len = args[4];
+    let buf_ptr = args[1] as u64;
+    let len = args[2];
     if buf_ptr == 0 || len == 0 {
         return NtStatus::Success;
     }

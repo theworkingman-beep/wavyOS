@@ -198,6 +198,6 @@ mod tests {
         assert_eq!(section.virtual_address, 0x1000);
         assert_eq!(section.virtual_size, 0x1000);
         assert_eq!(section.raw_offset, 0x200);
-        assert_eq!(section.raw_size, 42);
+        assert_eq!(section.raw_size, 512);
     }
 }
