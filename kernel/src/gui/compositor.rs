@@ -149,7 +149,8 @@ impl Compositor {
         }
     }
 
-    fn write_pixel(&mut self, x: i32, y: i32, color: Color) {
+    /// Write a pixel to the framebuffer if it is within bounds.
+    pub fn write_pixel(&mut self, x: i32, y: i32, color: Color) {
         if x < 0 || y < 0 || x >= self.info.width as i32 || y >= self.info.height as i32 {
             return;
         }

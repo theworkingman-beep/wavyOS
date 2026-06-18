@@ -8,6 +8,7 @@ use spin::Mutex;
 
 pub mod color;
 pub mod compositor;
+pub mod cursor;
 pub mod font;
 
 pub use compositor::WindowId;
@@ -29,10 +30,15 @@ pub fn init_compositor(buffer: &'static mut [u8], info: FrameBufferInfo) {
     }
 }
 
-/// Render the current scene to the framebuffer.
+/// Render the current scene to the framebuffer, including the mouse cursor.
 pub fn render() {
     if let Some(c) = COMPOSITOR.lock().as_mut() {
         c.render();
+        #[cfg(feature = "arch_x86_64")]
+        {
+            let (mx, my) = crate::arch::x86_64::interrupts::mouse_position();
+            cursor::draw_cursor(c, mx, my);
+        }
     }
 }
 

@@ -22,6 +22,13 @@ static mut KEYBOARD_BUF: [u8; KEYBOARD_BUF_SIZE] = [0; KEYBOARD_BUF_SIZE];
 static mut KEYBOARD_HEAD: usize = 0;
 static mut KEYBOARD_TAIL: usize = 0;
 
+// PS/2 mouse state. IRQ12 is routed to the second PIC chained through IRQ2.
+static mut MOUSE_X: i32 = 100;
+static mut MOUSE_Y: i32 = 100;
+static mut MOUSE_BTN: u8 = 0;
+static mut MOUSE_CYCLE: u8 = 0;
+static mut MOUSE_PACKET: [i8; 3] = [0; 3];
+
 /// Initialize the IDT and remap the PIC.
 pub fn init() {
     unsafe {
@@ -35,15 +42,71 @@ pub fn init() {
         IDT[32].set_handler_addr(x86_64::VirtAddr::new(timer_interrupt_handler as *const () as u64));
         // IRQ1: keyboard
         IDT[33].set_handler_fn(keyboard_interrupt_handler);
+        // IRQ12: mouse (PIC1 entry 44 = 32 + 12)
+        IDT[44].set_handler_fn(mouse_interrupt_handler);
 
         IDT.load();
     }
 
     remap_pic();
+    init_ps2_mouse();
     unsafe {
-        // Unmask timer (IRQ0) and keyboard (IRQ1).
+        // Unmask timer (IRQ0), keyboard (IRQ1), and mouse (IRQ12 through PIC2).
         let mut pic1_data: Port<u8> = Port::new(PIC1_DATA);
         pic1_data.write(0xFC);
+        let mut pic2_data: Port<u8> = Port::new(PIC2_DATA);
+        pic2_data.write(0xFB);
+    }
+}
+
+/// Initialize the PS/2 mouse and enable interrupts.
+fn init_ps2_mouse() {
+    unsafe {
+        wait_ps2_write();
+        Port::new(0x64).write(0xA8u8); // enable mouse auxiliary device
+
+        wait_ps2_write();
+        Port::new(0x64).write(0x20u8); // command byte read
+        let status = read_ps2_data();
+
+        wait_ps2_write();
+        Port::new(0x64).write(0x60u8); // command byte write
+        wait_ps2_write();
+        Port::new(0x60).write(status | 2 | 1); // enable IRQs
+
+        write_mouse_cmd(0xF6); // defaults
+        write_mouse_cmd(0xF4); // enable streaming
+    }
+}
+
+fn read_ps2_data() -> u8 {
+    unsafe {
+        loop {
+            let status: u8 = Port::new(0x64).read();
+            if (status & 1) != 0 {
+                return Port::new(0x60).read();
+            }
+        }
+    }
+}
+
+fn wait_ps2_write() {
+    unsafe {
+        loop {
+            let status: u8 = Port::new(0x64).read();
+            if (status & 2) == 0 {
+                break;
+            }
+        }
+    }
+}
+
+fn write_mouse_cmd(cmd: u8) {
+    unsafe {
+        wait_ps2_write();
+        Port::new(0x64).write(0xD4u8);
+        wait_ps2_write();
+        Port::new(0x60).write(cmd);
     }
 }
 
@@ -245,4 +308,48 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
         let mut pic1_command: Port<u8> = Port::new(PIC1_COMMAND);
         pic1_command.write(PIC_EOI);
     }
+}
+
+extern "x86-interrupt" fn mouse_interrupt_handler(_stack_frame: InterruptStackFrame) {
+    unsafe {
+        let mut port: Port<u8> = Port::new(0x60);
+        let byte = port.read() as i8;
+
+        // Wait for the packet start bit (bit 3 set in the first byte).
+        if MOUSE_CYCLE == 0 && (byte & 0x08) == 0 {
+            let mut pic1_command: Port<u8> = Port::new(PIC1_COMMAND);
+            pic1_command.write(PIC_EOI);
+            let mut pic2_command: Port<u8> = Port::new(PIC2_COMMAND);
+            pic2_command.write(PIC_EOI);
+            return;
+        }
+
+        MOUSE_PACKET[MOUSE_CYCLE as usize] = byte;
+        MOUSE_CYCLE = (MOUSE_CYCLE + 1) % 3;
+
+        if MOUSE_CYCLE == 0 {
+            let dx = MOUSE_PACKET[1] as i32;
+            let dy = MOUSE_PACKET[2] as i32;
+            MOUSE_X += dx;
+            MOUSE_Y -= dy; // screen Y grows downward
+            MOUSE_X = MOUSE_X.clamp(0, 1279);
+            MOUSE_Y = MOUSE_Y.clamp(0, 1023);
+            MOUSE_BTN = MOUSE_PACKET[0] as u8 & 0x07;
+        }
+
+        let mut pic1_command: Port<u8> = Port::new(PIC1_COMMAND);
+        pic1_command.write(PIC_EOI);
+        let mut pic2_command: Port<u8> = Port::new(PIC2_COMMAND);
+        pic2_command.write(PIC_EOI);
+    }
+}
+
+/// Return the current mouse position if a PS/2 mouse has produced packets.
+pub fn mouse_position() -> (i32, i32) {
+    unsafe { (MOUSE_X, MOUSE_Y) }
+}
+
+/// Return the current mouse button state. Bit 0 = left, bit 1 = right, bit 2 = middle.
+pub fn mouse_buttons() -> u8 {
+    unsafe { MOUSE_BTN }
 }
