@@ -32,13 +32,30 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends qemu-system-x86 xorriso util-linux
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 ovmf xorriso util-linux
 
       - name: Build x86_64 kernel and boot images
         run: ./build.sh x86_64
 
       - name: Create hybrid BIOS+UEFI ISO
         run: ./build-iso.sh
+
+      - name: Boot test x86_64 ISO in QEMU/OVMF
+        run: |
+          cp /usr/share/OVMF/OVMF_VARS.fd /tmp/ovmf_vars.fd
+          timeout 30s qemu-system-x86_64 \
+            -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
+            -drive if=pflash,format=raw,file=/tmp/ovmf_vars.fd \
+            -cdrom target/aperture.iso \
+            -m 512 -smp 1 -serial stdio -display none \
+            2>&1 | tee /tmp/qemu-boot.log || true
+          if grep -q "Aperture OS x86_64 kernel booting" /tmp/qemu-boot.log; then
+            echo "UEFI boot test passed"
+          else
+            echo "UEFI boot test failed; kernel did not reach serial output"
+            cat /tmp/qemu-boot.log
+            exit 1
+          fi
 
       - name: Run host tests
         run: cargo test -p x86-decode -p pe-parser -p aarch64-decode
