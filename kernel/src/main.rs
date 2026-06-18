@@ -92,7 +92,7 @@ mod x86_64_entry {
         let mut input = [0u8; 80];
         let mut input_len = 0usize;
         loop {
-            while let Some(ch) = kernel::arch::x86_64::interrupts::read_char() {
+            while let Some(ch) = kernel::arch::interrupts::read_char() {
                 match ch {
                     '\n' => input_len = 0,
                     '\u{8}' => {
@@ -117,7 +117,7 @@ mod x86_64_entry {
             kernel::gui::draw_text(win, line, 60, 50, kernel::gui::Color::new(0x00, 0xFF, 0x00));
             kernel::gui::render();
 
-            kernel::arch::x86_64::halt_once();
+            kernel::arch::halt_once();
         }
     }
 

@@ -1,6 +1,7 @@
 //! AArch64 hardware abstraction layer (stub for cross-architecture build).
 
 pub mod context_switch;
+pub mod interrupts;
 
 /// Initialize AArch64-specific hardware.
 pub fn init() {
