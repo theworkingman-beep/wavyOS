@@ -91,6 +91,18 @@ impl Compositor {
         id
     }
 
+    /// Return a mutable reference to the window with the given id.
+    pub fn window_mut(&mut self, id: WindowId) -> Option<&mut Window> {
+        self.windows.iter_mut().find_map(|w| {
+            if let Some(window) = w {
+                if window.id == id {
+                    return Some(window);
+                }
+            }
+            None
+        })
+    }
+
     /// Render all visible windows to the framebuffer, back-to-front.
     pub fn render(&mut self) {
         self.clear(Color::DARK_GRAY);

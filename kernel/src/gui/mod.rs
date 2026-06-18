@@ -8,6 +8,7 @@ use spin::Mutex;
 
 pub mod color;
 pub mod compositor;
+pub mod font;
 
 pub use compositor::WindowId;
 use compositor::Compositor;
@@ -39,3 +40,15 @@ pub fn render() {
 pub fn create_window(title: &str, x: i32, y: i32, width: i32, height: i32) -> Option<WindowId> {
     COMPOSITOR.lock().as_mut().map(|c| c.create_window(title, x, y, width, height))
 }
+
+/// Draw text onto the window identified by `id`.
+pub fn draw_text(id: Option<WindowId>, text: &str, x: i32, y: i32, color: Color) {
+    let Some(id) = id else { return };
+    if let Some(c) = COMPOSITOR.lock().as_mut() {
+        if let Some(window) = c.window_mut(id) {
+            font::draw_text(window, text, x, y, color);
+        }
+    }
+}
+
+pub use color::Color;

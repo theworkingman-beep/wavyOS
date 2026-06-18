@@ -57,7 +57,21 @@ mod x86_64_entry {
                 core::slice::from_raw_parts_mut(fb.buffer_mut().as_mut_ptr(), len)
             };
             kernel::gui::init_compositor(buffer, info);
-            let _win = kernel::gui::create_window("Aperture", 100, 100, 320, 240);
+            let win = kernel::gui::create_window("Aperture", 100, 100, 320, 240);
+            kernel::gui::draw_text(
+                win,
+                "Aperture OS",
+                12,
+                12,
+                kernel::gui::Color::new(0xFF, 0xFF, 0xFF),
+            );
+            kernel::gui::draw_text(
+                win,
+                "Hello, world!",
+                12,
+                28,
+                kernel::gui::Color::new(0x00, 0xFF, 0x00),
+            );
             kernel::gui::render();
             kernel::logln!(
                 "Framebuffer: {}x{} stride={} bpp={}",
