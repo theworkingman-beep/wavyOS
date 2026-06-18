@@ -10,6 +10,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   build-x86_64:
     name: Build x86_64
@@ -24,10 +27,15 @@ jobs:
           components: rust-src, llvm-tools-preview
 
       - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 xorriso util-linux
 
       - name: Build x86_64 kernel and boot images
         run: ./build.sh x86_64
+
+      - name: Create hybrid BIOS+UEFI ISO
+        run: ./build-iso.sh
 
       - name: Run host tests
         run: cargo test -p x86-decode && cargo test -p pe-parser
@@ -39,6 +47,13 @@ jobs:
           path: |
             target/aperture-uefi.img
             target/aperture-bios.img
+          if-no-files-found: error
+
+      - name: Upload x86_64 ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: aperture-os-x86_64-iso
+          path: target/aperture.iso
           if-no-files-found: error
 
   build-aarch64:
@@ -68,3 +83,48 @@ jobs:
           name: aperture-os-aarch64-kernel-elf
           path: target/aarch64-unknown-none/debug/kernel
           if-no-files-found: error
+
+  release:
+    name: Create nightly release
+    runs-on: ubuntu-latest
+    needs: [build-x86_64, build-aarch64]
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Download x86_64 ISO
+        uses: actions/download-artifact@v4
+        with:
+          name: aperture-os-x86_64-iso
+          path: release/
+
+      - name: Download AArch64 kernel ELF
+        uses: actions/download-artifact@v4
+        with:
+          name: aperture-os-aarch64-kernel-elf
+          path: release/
+
+      - name: Compute nightly date
+        id: date
+        run: |
+          RELEASE_DATE="$(date -u +%Y-%m-%d)"
+          echo "date=${RELEASE_DATE}" >> "$GITHUB_OUTPUT"
+
+      - name: Rename assets with date
+        run: |
+          mv release/aperture.iso "release/aperture-os-x86_64-${RELEASE_DATE}.iso"
+          mv release/kernel "release/aperture-os-aarch64-${RELEASE_DATE}.elf"
+        env:
+          RELEASE_DATE: ${{ steps.date.outputs.date }}
+
+      - name: Create nightly release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly-${{ steps.date.outputs.date }}
+          name: Aperture OS nightly ${{ steps.date.outputs.date }}
+          body: |
+            Automated daily build of Aperture OS.
+
+            Assets:
+            - `aperture-os-x86_64-${{ steps.date.outputs.date }}.iso` — hybrid BIOS+UEFI bootable ISO
+            - `aperture-os-aarch64-${{ steps.date.outputs.date }}.elf` — AArch64 kernel ELF
+          files: release/*
+          prerelease: true
